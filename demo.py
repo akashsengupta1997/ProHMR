@@ -80,18 +80,20 @@ for i, batch in enumerate(tqdm(dataloader)):
         out = model(batch)
         """
         out is a dict with keys:
-        - pred_cam: (1, num_samples, 3) tensor
+        - pred_cam: (1, num_samples, 3) tensor, camera is same for all samples
+        - pred_cam_t: (1, num_samples, 3) tensor, camera is same for all samples
+        
         - pred_smpl_params: dict with keys:
                 - global_orient: (1, num_samples, 1, 3, 3) tensor
                 - body_pose: (1, num_samples, 23, 3, 3) tensor
-                - betas: (1, num_samples, 10) tensor
-        - log_prob: (1, num_samples) tensor
-        - conditioning_feats: (1, 2047) tensor
+                - betas: (1, num_samples, 10) tensor, betas are same for all samples
         - pred_pose_6d: (1, num_samples, 144) tensor
-        - pred_cam_t: (1, num_samples, 3) tensor
         - pred_vertices: (1, num_samples, 6890, 3) tensor
         - pred_keypoints_3d: (1, num_samples, 44, 3) tensor
         - pred_keypoints_2d: (1, num_samples, 44, 2) tensor
+        
+        - log_prob: (1, num_samples) tensor
+        - conditioning_feats: (1, 2047) tensor
         
         TODO add these outputs:
         - pred_keypoints_3d_h36m: (1, num_samples, 14, 3) tensor
@@ -107,6 +109,8 @@ for i, batch in enumerate(tqdm(dataloader)):
         #         for key2 in out[key]:
         #             print(key2, out[key][key2].shape)
         print(out['pred_cam'])
+        print(out['pred_smpl_params']['betas'])
+        print(out['pred_smpl_params']['global_orient'])
 
     batch_size = batch['img'].shape[0]
     for n in range(batch_size):
