@@ -35,6 +35,7 @@ parser.add_argument('--out_format', type=str, default='jpg', choices=['jpg', 'pn
 parser.add_argument('--run_fitting', dest='run_fitting', action='store_true', default=False, help='If set, run fitting on top of regression')
 parser.add_argument('--full_frame', dest='full_frame', action='store_true', default=False, help='If set, run fitting in the original image space and not in the crop.')
 parser.add_argument('--batch_size', type=int, default=1, help='Batch size for inference/fitting')
+parser.add_argument('--num_samples', type=int, default=25, help='Number of test samples to draw')
 
 
 args = parser.parse_args()
@@ -52,6 +53,9 @@ else:
 # Setup model
 model = ProHMR.load_from_checkpoint(args.checkpoint, strict=False, cfg=model_cfg).to(device)
 model.eval()
+model_cfg.defrost()
+model_cfg.TEST.NUM_TEST_SAMPLES = args.num_samples
+model_cfg.freeze()
 
 if args.run_fitting:
     keypoint_fitting = KeypointFitting(model_cfg)
@@ -73,14 +77,15 @@ for i, batch in enumerate(tqdm(dataloader)):
 
     batch = recursive_to(batch, device)
     with torch.no_grad():
-        out = model(batch)
+        out = model(batch, num_samples=25)
         print(out.keys())
         for key in out:
             print('\n', key)
             if isinstance(out[key], torch.Tensor):
                 print(out[key].shape)
-            else:
-                print(out)
+            elif isinstance(out[key], dict):
+                for key2 in out[key]:
+                    print(key2, out[key][key2].shape)
 
     batch_size = batch['img'].shape[0]
     for n in range(batch_size):
