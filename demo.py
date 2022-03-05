@@ -77,7 +77,7 @@ for i, batch in enumerate(tqdm(dataloader)):
 
     batch = recursive_to(batch, device)
     with torch.no_grad():
-        out = model(batch, num_samples=25)
+        out = model(batch)
         print(out.keys())
         for key in out:
             print('\n', key)
