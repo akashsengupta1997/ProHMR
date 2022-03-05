@@ -54,7 +54,7 @@ else:
 model = ProHMR.load_from_checkpoint(args.checkpoint, strict=False, cfg=model_cfg).to(device)
 model.eval()
 model_cfg.defrost()
-model_cfg.TEST.NUM_TEST_SAMPLES = args.num_samples
+model_cfg.TRAIN.NUM_TEST_SAMPLES = args.num_samples
 model_cfg.freeze()
 
 if args.run_fitting:
