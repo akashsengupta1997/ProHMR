@@ -74,8 +74,9 @@ for i, batch in enumerate(tqdm(dataloader)):
     batch = recursive_to(batch, device)
     with torch.no_grad():
         out = model(batch)
-        for key in out:
-            print(key, out[key].shape)
+        print(out.keys())
+        # for key in out:
+        #     print(key, out[key].shape)
 
     batch_size = batch['img'].shape[0]
     for n in range(batch_size):
