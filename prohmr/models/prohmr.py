@@ -83,7 +83,7 @@ class ProHMR(pl.LightningModule):
             _, _ = self.flow.log_prob(smpl_params, conditioning_feats)
             self.initialized |= True
 
-    def forward_step(self, batch: Dict, train: bool = False) -> Dict:
+    def forward_step(self, batch: Dict, train: bool = False, num_samples=None) -> Dict:
         """
         Run a forward step of the network
         Args:
@@ -93,10 +93,11 @@ class ProHMR(pl.LightningModule):
             Dict: Dictionary containing the regression output
         """
 
-        if train:
-            num_samples = self.cfg.TRAIN.NUM_TRAIN_SAMPLES
-        else:
-            num_samples = self.cfg.TRAIN.NUM_TEST_SAMPLES
+        if num_samples is None:
+            if train:
+                num_samples = self.cfg.TRAIN.NUM_TRAIN_SAMPLES
+            else:
+                num_samples = self.cfg.TRAIN.NUM_TEST_SAMPLES
 
 
         # Use RGB image as input
