@@ -75,8 +75,12 @@ for i, batch in enumerate(tqdm(dataloader)):
     with torch.no_grad():
         out = model(batch)
         print(out.keys())
-        # for key in out:
-        #     print(key, out[key].shape)
+        for key in out:
+            print('\n', key)
+            if isinstance(out[key], torch.Tensor):
+                print(out[key].shape)
+            else:
+                print(out)
 
     batch_size = batch['img'].shape[0]
     for n in range(batch_size):
