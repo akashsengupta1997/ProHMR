@@ -77,7 +77,6 @@ def evaluate_3dpw(model,
         target_gender = samples_batch['gender'][0]
         hrnet_joints2D_coco = samples_batch['hrnet_kps']
         hrnet_joints2D_coco_vis = samples_batch['hrnet_kps_vis']
-        print('HRNET KPS SHAPES', hrnet_joints2D_coco.shape, hrnet_joints2D_coco_vis.shape)
         fname = samples_batch['fname']
 
         if target_gender == 'm':
@@ -96,7 +95,7 @@ def evaluate_3dpw(model,
         target_reposed_vertices = target_reposed_smpl_output.vertices
 
         # ------------------------------- PREDICTIONS -------------------------------
-        out = model(input)
+        out = model({'img': input})
         """
         out is a dict with keys:
         - pred_cam: (1, num_samples, 3) tensor, camera is same for all samples
