@@ -330,7 +330,7 @@ def evaluate_3dpw(model,
         if 'joints3D_coco_invis_samples_dist_from_mean' in metrics:
             # (In)visibility of specific joints determined by HRNet 2D joint predictions and confidence scores.
             hrnet_joints2D_coco_invis = np.logical_not(hrnet_joints2D_coco_vis[0])  # (17,)
-            print(hrnet_joints2D_coco_vis.dtype, hrnet_joints2D_coco_vis.shape)
+
             if np.any(hrnet_joints2D_coco_invis):
                 joints3D_coco_invis_samples = pred_joints_coco_samples[:, hrnet_joints2D_coco_invis, :]  # (num samples, num invis joints, 3)
                 joints3D_coco_invis_samples_mean = joints3D_coco_invis_samples.mean(axis=0)  # (num_invis_joints, 3)
@@ -493,6 +493,7 @@ def evaluate_3dpw(model,
         #         plt.close()
 
     # ------------------------------- DISPLAY METRICS AND SAVE PER-FRAME METRICS -------------------------------
+    print('\n--- Check Save Shapes ---')
     fname_per_frame = np.concatenate(fname_per_frame, axis=0)
     np.save(os.path.join(save_path, 'fname_per_frame.npy'), fname_per_frame)
     print(fname_per_frame.shape)
@@ -540,7 +541,7 @@ def evaluate_3dpw(model,
             elif 'mpjpe' in metric_type:
                 num_per_sample = 14
             # print('Check total samples:', metric_type, num_per_sample, self.total_samples)
-            final_metrics[metric_type] = metric_sums[metric_type] / (num_datapoints * num_per_sample)
+            final_metrics[metric_type] = metric_sums[metric_type] / (metric_sums['num_datapoints'] * num_per_sample)
 
     print('\n---- METRICS ----')
     for metric in final_metrics.keys():
@@ -597,6 +598,7 @@ if __name__ == '__main__':
     metrics = ['pve', 'pve_sc', 'pve_pa', 'pve-t', 'pve-t_sc', 'mpjpe', 'mpjpe_sc', 'mpjpe_pa']
     metrics.extend([metric + '_samples_min' for metric in metrics ])
     metrics.extend(['verts_samples_dist_from_mean', 'joints3D_coco_samples_dist_from_mean', 'joints3D_coco_invis_samples_dist_from_mean'])
+    metrics.append('hrnet_joints2D_l2es')
     metrics.append('hrnet_joints2Dsamples_l2es')
 
     save_path = '/scratch/as2562/ProHMR/evaluations/3dpw'
