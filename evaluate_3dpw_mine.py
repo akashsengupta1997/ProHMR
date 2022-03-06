@@ -330,7 +330,7 @@ def evaluate_3dpw(model,
         if 'joints3D_coco_invis_samples_dist_from_mean' in metrics:
             # (In)visibility of specific joints determined by HRNet 2D joint predictions and confidence scores.
             hrnet_joints2D_coco_invis = np.logical_not(hrnet_joints2D_coco_vis[0])  # (17,)
-
+            print(hrnet_joints2D_coco_vis.dtype, hrnet_joints2D_coco_vis.shape)
             if np.any(hrnet_joints2D_coco_invis):
                 joints3D_coco_invis_samples = pred_joints_coco_samples[:, hrnet_joints2D_coco_invis, :]  # (num samples, num invis joints, 3)
                 joints3D_coco_invis_samples_mean = joints3D_coco_invis_samples.mean(axis=0)  # (num_invis_joints, 3)
