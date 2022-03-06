@@ -25,7 +25,7 @@ def evaluate_3dpw(model,
                   eval_dataset,
                   metrics,
                   device,
-                  vis_save_path,
+                  save_path,
                   num_pred_samples,
                   num_workers=4,
                   pin_memory=True,
@@ -175,31 +175,31 @@ def evaluate_3dpw(model,
         pred_reposed_vertices_samples = pred_reposed_vertices_samples.cpu().detach().numpy()
 
         # -------------- 3D Metrics with Mode and Minimum Error Samples --------------
-        if 'pve' in metrics:
+        if 'pves' in metrics:
             pve_batch = np.linalg.norm(pred_vertices_mode - target_vertices,
                                        axis=-1)  # (bs, 6890)
-            metric_sums['pve'] += np.sum(pve_batch)  # scalar
-            per_frame_metrics['pve'].append(np.mean(pve_batch, axis=-1))
+            metric_sums['pves'] += np.sum(pve_batch)  # scalar
+            per_frame_metrics['pves'].append(np.mean(pve_batch, axis=-1))
 
-        if 'pve_samples_min' in metrics:
+        if 'pves_samples_min' in metrics:
             pve_per_sample = np.linalg.norm(pred_vertices_samples - target_vertices, axis=-1)  # (num samples, 6890)
             min_pve_sample = np.argmin(np.mean(pve_per_sample, axis=-1))
             pve_samples_min_batch = pve_per_sample[min_pve_sample]  # (6890,)
-            metric_sums['pve_samples_min'] += np.sum(pve_samples_min_batch)
-            per_frame_metrics['pve_samples_min'].append(np.mean(pve_samples_min_batch, axis=-1, keepdims=True))  # (1,)
+            metric_sums['pves_samples_min'] += np.sum(pve_samples_min_batch)
+            per_frame_metrics['pves_samples_min'].append(np.mean(pve_samples_min_batch, axis=-1, keepdims=True))  # (1,)
 
         # Scale and translation correction
-        if 'pve_sc' in metrics:
+        if 'pves_sc' in metrics:
             pred_vertices_scale_corrected = scale_and_translation_transform_batch(
                 pred_vertices_mode,
                 target_vertices)
             pve_sc_batch = np.linalg.norm(
                 pred_vertices_scale_corrected - target_vertices,
                 axis=-1)  # (bs, 6890)
-            metric_sums['pve_sc'] += np.sum(pve_sc_batch)  # scalar
-            per_frame_metrics['pve_sc'].append(np.mean(pve_sc_batch, axis=-1))
+            metric_sums['pves_sc'] += np.sum(pve_sc_batch)  # scalar
+            per_frame_metrics['pves_sc'].append(np.mean(pve_sc_batch, axis=-1))
 
-        if 'pve_sc_samples_min' in metrics:
+        if 'pves_sc_samples_min' in metrics:
             target_vertices_tiled = np.tile(target_vertices, (num_pred_samples, 1, 1))  # (num samples, 6890, 3)
             pred_vertices_samples_scale_corrected = scale_and_translation_transform_batch(
                 pred_vertices_samples,
@@ -207,17 +207,17 @@ def evaluate_3dpw(model,
             pve_sc_per_sample = np.linalg.norm(pred_vertices_samples_scale_corrected - target_vertices_tiled, axis=-1)  # (num samples, 6890)
             min_pve_sc_sample = np.argmin(np.mean(pve_sc_per_sample, axis=-1))
             pve_sc_samples_min_batch = pve_sc_per_sample[min_pve_sc_sample]  # (6890,)
-            metric_sums['pve_sc_samples_min'] += np.sum(pve_sc_samples_min_batch)
-            per_frame_metrics['pve_sc_samples_min'].append(np.mean(pve_sc_samples_min_batch, axis=-1, keepdims=True))  # (1,)
+            metric_sums['pves_sc_samples_min'] += np.sum(pve_sc_samples_min_batch)
+            per_frame_metrics['pves_sc_samples_min'].append(np.mean(pve_sc_samples_min_batch, axis=-1, keepdims=True))  # (1,)
 
         # Procrustes analysis
-        if 'pve_pa' in metrics:
+        if 'pves_pa' in metrics:
             pred_vertices_pa = compute_similarity_transform_batch_numpy(pred_vertices_mode, target_vertices)
             pve_pa_batch = np.linalg.norm(pred_vertices_pa - target_vertices, axis=-1)  # (bs, 6890)
-            metric_sums['pve_pa'] += np.sum(pve_pa_batch)  # scalar
-            per_frame_metrics['pve_pa'].append(np.mean(pve_pa_batch, axis=-1))
+            metric_sums['pves_pa'] += np.sum(pve_pa_batch)  # scalar
+            per_frame_metrics['pves_pa'].append(np.mean(pve_pa_batch, axis=-1))
 
-        if 'pve_pa_samples_min' in metrics:
+        if 'pves_pa_samples_min' in metrics:
             target_vertices_tiled = np.tile(target_vertices, (num_pred_samples, 1, 1))  # (num samples, 6890, 3)
             pred_vertices_samples_pa = compute_similarity_transform_batch_numpy(
                 pred_vertices_samples,
@@ -225,33 +225,33 @@ def evaluate_3dpw(model,
             pve_pa_per_sample = np.linalg.norm(pred_vertices_samples_pa - target_vertices_tiled, axis=-1)  # (num samples, 6890)
             min_pve_pa_sample = np.argmin(np.mean(pve_pa_per_sample, axis=-1))
             pve_pa_samples_min_batch = pve_pa_per_sample[min_pve_pa_sample]  # (6890,)
-            metric_sums['pve_pa_samples_min'] += np.sum(pve_pa_samples_min_batch)
-            per_frame_metrics['pve_pa_samples_min'].append(np.mean(pve_pa_samples_min_batch, axis=-1, keepdims=True))  # (1,)
+            metric_sums['pves_pa_samples_min'] += np.sum(pve_pa_samples_min_batch)
+            per_frame_metrics['pves_pa_samples_min'].append(np.mean(pve_pa_samples_min_batch, axis=-1, keepdims=True))  # (1,)
 
-        if 'pve-t' in metrics:
+        if 'pve-ts' in metrics:
             pvet_batch = np.linalg.norm(pred_reposed_vertices_mean - target_reposed_vertices, axis=-1)
-            metric_sums['pve-t'] += np.sum(pvet_batch)  # scalar
-            per_frame_metrics['pve-t'].append(np.mean(pvet_batch, axis=-1))
+            metric_sums['pve-ts'] += np.sum(pvet_batch)  # scalar
+            per_frame_metrics['pve-ts'].append(np.mean(pvet_batch, axis=-1))
 
-        if 'pve-t_samples_min' in metrics:
+        if 'pve-ts_samples_min' in metrics:
             pvet_per_sample = np.linalg.norm(pred_reposed_vertices_samples - target_reposed_vertices, axis=-1)  # (num samples, 6890)
             min_pvet_sample = np.argmin(np.mean(pvet_per_sample, axis=-1))
             pvet_samples_min_batch = pvet_per_sample[min_pvet_sample]  # (6890,)
-            metric_sums['pve-t_samples_min'] += np.sum(pvet_samples_min_batch)
-            per_frame_metrics['pve-t_samples_min'].append(np.mean(pvet_samples_min_batch, axis=-1, keepdims=True))  # (1,)
+            metric_sums['pve-ts_samples_min'] += np.sum(pvet_samples_min_batch)
+            per_frame_metrics['pve-ts_samples_min'].append(np.mean(pvet_samples_min_batch, axis=-1, keepdims=True))  # (1,)
 
         # Scale and translation correction
-        if 'pve-t_sc' in metrics:
+        if 'pve-ts_sc' in metrics:
             pred_reposed_vertices_sc = scale_and_translation_transform_batch(
                 pred_reposed_vertices_mean,
                 target_reposed_vertices)
             pvet_scale_corrected_batch = np.linalg.norm(
                 pred_reposed_vertices_sc - target_reposed_vertices,
                 axis=-1)  # (bs, 6890)
-            metric_sums['pve-t_sc'] += np.sum(pvet_scale_corrected_batch)  # scalar
-            per_frame_metrics['pve-t_sc'].append(np.mean(pvet_scale_corrected_batch, axis=-1))
+            metric_sums['pve-ts_sc'] += np.sum(pvet_scale_corrected_batch)  # scalar
+            per_frame_metrics['pve-ts_sc'].append(np.mean(pvet_scale_corrected_batch, axis=-1))
 
-        if 'pve-t_sc_samples_min' in metrics:
+        if 'pve-ts_sc_samples_min' in metrics:
             target_reposed_vertices_tiled = np.tile(target_reposed_vertices, (num_pred_samples, 1, 1))  # (num samples, 6890, 3)
             pred_reposed_vertices_samples_sc = scale_and_translation_transform_batch(
                 pred_reposed_vertices_samples,
@@ -259,33 +259,33 @@ def evaluate_3dpw(model,
             pvet_sc_per_sample = np.linalg.norm(pred_reposed_vertices_samples_sc - target_reposed_vertices_tiled, axis=-1)  # (num samples, 6890)
             min_pvet_sc_sample = np.argmin(np.mean(pvet_sc_per_sample, axis=-1))
             pvet_sc_samples_min_batch = pvet_sc_per_sample[min_pvet_sc_sample]  # (6890,)
-            metric_sums['pve-t_sc_samples_min'] += np.sum(pvet_sc_samples_min_batch)
-            per_frame_metrics['pve-t_sc_samples_min'].append(np.mean(pvet_sc_samples_min_batch, axis=-1, keepdims=True))  # (1,)
+            metric_sums['pve-ts_sc_samples_min'] += np.sum(pvet_sc_samples_min_batch)
+            per_frame_metrics['pve-ts_sc_samples_min'].append(np.mean(pvet_sc_samples_min_batch, axis=-1, keepdims=True))  # (1,)
 
-        if 'mpjpe' in metrics:
+        if 'mpjpes' in metrics:
             mpjpe_batch = np.linalg.norm(pred_joints_h36mlsp_mode - target_joints_h36mlsp, axis=-1)  # (bs, 14)
-            metric_sums['mpjpe'] += np.sum(mpjpe_batch)  # scalar
-            per_frame_metrics['mpjpe'].append(np.mean(mpjpe_batch, axis=-1))
+            metric_sums['mpjpes'] += np.sum(mpjpe_batch)  # scalar
+            per_frame_metrics['mpjpes'].append(np.mean(mpjpe_batch, axis=-1))
 
-        if 'mpjpe_samples_min' in metrics:
+        if 'mpjpes_samples_min' in metrics:
             mpjpe_per_sample = np.linalg.norm(pred_joints_h36mlsp_samples - target_joints_h36mlsp, axis=-1)  # (num samples, 14)
             min_mpjpe_sample = np.argmin(np.mean(mpjpe_per_sample, axis=-1))
             mpjpe_samples_min_batch = mpjpe_per_sample[min_mpjpe_sample]  # (14,)
-            metric_sums['mpjpe_samples_min'] += np.sum(mpjpe_samples_min_batch)
-            per_frame_metrics['mpjpe_samples_min'].append(np.mean(mpjpe_samples_min_batch, axis=-1, keepdims=True))  # (1,)
+            metric_sums['mpjpes_samples_min'] += np.sum(mpjpe_samples_min_batch)
+            per_frame_metrics['mpjpes_samples_min'].append(np.mean(mpjpe_samples_min_batch, axis=-1, keepdims=True))  # (1,)
 
         # Scale and translation correction
-        if 'mpjpe_sc' in metrics:
+        if 'mpjpes_sc' in metrics:
             pred_joints_h36mlsp_sc = scale_and_translation_transform_batch(
                 pred_joints_h36mlsp_mode,
                 target_joints_h36mlsp)
             mpjpe_sc_batch = np.linalg.norm(
                 pred_joints_h36mlsp_sc - target_joints_h36mlsp,
                 axis=-1)  # (bs, 14)
-            metric_sums['mpjpe_sc'] += np.sum(mpjpe_sc_batch)  # scalar
-            per_frame_metrics['mpjpe_sc'].append(np.mean(mpjpe_sc_batch, axis=-1))
+            metric_sums['mpjpes_sc'] += np.sum(mpjpe_sc_batch)  # scalar
+            per_frame_metrics['mpjpes_sc'].append(np.mean(mpjpe_sc_batch, axis=-1))
 
-        if 'mpjpe_sc_samples_min' in metrics:
+        if 'mpjpes_sc_samples_min' in metrics:
             target_joints_h36mlsp_tiled = np.tile(target_joints_h36mlsp, (num_pred_samples, 1, 1))  # (num samples, 14, 3)
             pred_joints_h36mlsp_samples_sc = scale_and_translation_transform_batch(
                 pred_joints_h36mlsp_samples,
@@ -293,17 +293,17 @@ def evaluate_3dpw(model,
             mpjpe_sc_per_sample = np.linalg.norm(pred_joints_h36mlsp_samples_sc - target_joints_h36mlsp_tiled, axis=-1)  # (num samples, 14)
             min_mpjpe_sc_sample = np.argmin(np.mean(mpjpe_sc_per_sample, axis=-1))
             mpjpe_sc_samples_min_batch = mpjpe_sc_per_sample[min_mpjpe_sc_sample]  # (14,)
-            metric_sums['mpjpe_sc_samples_min'] += np.sum(mpjpe_sc_samples_min_batch)
-            per_frame_metrics['mpjpe_sc_samples_min'].append(np.mean(mpjpe_sc_samples_min_batch, axis=-1, keepdims=True))  # (1,)
+            metric_sums['mpjpes_sc_samples_min'] += np.sum(mpjpe_sc_samples_min_batch)
+            per_frame_metrics['mpjpes_sc_samples_min'].append(np.mean(mpjpe_sc_samples_min_batch, axis=-1, keepdims=True))  # (1,)
 
         # Procrustes analysis
-        if 'mpjpe_pa' in metrics:
+        if 'mpjpes_pa' in metrics:
             pred_joints_h36mlsp_pa = compute_similarity_transform_batch_numpy(pred_joints_h36mlsp_mode, target_joints_h36mlsp)
             mpjpe_pa_batch = np.linalg.norm(pred_joints_h36mlsp_pa - target_joints_h36mlsp, axis=-1)  # (bs, 14)
-            metric_sums['mpjpe_pa'] += np.sum(mpjpe_pa_batch)  # scalar
-            per_frame_metrics['mpjpe_pa'].append(np.mean(mpjpe_pa_batch, axis=-1))
+            metric_sums['mpjpes_pa'] += np.sum(mpjpe_pa_batch)  # scalar
+            per_frame_metrics['mpjpes_pa'].append(np.mean(mpjpe_pa_batch, axis=-1))
 
-        if 'mpjpe_pa_samples_min' in metrics:
+        if 'mpjpes_pa_samples_min' in metrics:
             target_joints_h36mlsp_tiled = np.tile(target_joints_h36mlsp, (num_pred_samples, 1, 1))  # (num samples, 14, 3)
             pred_joints_h36mlsp_samples_pa = compute_similarity_transform_batch_numpy(
                 pred_joints_h36mlsp_samples,
@@ -311,8 +311,8 @@ def evaluate_3dpw(model,
             mpjpe_pa_per_sample = np.linalg.norm(pred_joints_h36mlsp_samples_pa - target_joints_h36mlsp_tiled, axis=-1)  # (num samples, 14)
             min_mpjpe_pa_sample = np.argmin(np.mean(mpjpe_pa_per_sample, axis=-1))
             mpjpe_pa_samples_min_batch = mpjpe_pa_per_sample[min_mpjpe_pa_sample]  # (14,)
-            metric_sums['mpjpe_pa_samples_min'] += np.sum(mpjpe_pa_samples_min_batch)
-            per_frame_metrics['mpjpe_pa_samples_min'].append(np.mean(mpjpe_pa_samples_min_batch, axis=-1, keepdims=True))  # (1,)
+            metric_sums['mpjpes_pa_samples_min'] += np.sum(mpjpe_pa_samples_min_batch)
+            per_frame_metrics['mpjpes_pa_samples_min'].append(np.mean(mpjpe_pa_samples_min_batch, axis=-1, keepdims=True))  # (1,)
 
         # ---------------- 3D Sample Distance from Mean (i.e. Variance) Metrics -----------
         if 'verts_samples_dist_from_mean' in metrics:
@@ -491,7 +491,7 @@ def evaluate_3dpw(model,
         #         plt.close()
 
     # ------------------------------- DISPLAY METRICS AND SAVE PER-FRAME METRICS -------------------------------
-    print('\n--- Check Save Shapes ---')
+    print('\n--- Check Pred save Shapes ---')
     fname_per_frame = np.concatenate(fname_per_frame, axis=0)
     np.save(os.path.join(save_path, 'fname_per_frame.npy'), fname_per_frame)
     print(fname_per_frame.shape)
@@ -534,20 +534,26 @@ def evaluate_3dpw(model,
                 print('No invisible 3D COCO joints!')
 
         else:
-            if 'pve' in metric_type:
+            if 'pves' in metric_type:
                 num_per_sample = 6890
-            elif 'mpjpe' in metric_type:
+            elif 'mpjpes' in metric_type:
                 num_per_sample = 14
             # print('Check total samples:', metric_type, num_per_sample, self.total_samples)
             final_metrics[metric_type] = metric_sums[metric_type] / (metric_sums['num_datapoints'] * num_per_sample)
 
-    print('\n---- METRICS ----')
+    print('\n---- Metrics ----')
     for metric in final_metrics.keys():
         if final_metrics[metric] > 0.3:
             mult = 1
         else:
             mult = 1000
         print(metric, '{:.2f}'.format(final_metrics[metric] * mult))  # Converting from metres to millimetres
+
+    print('\n---- Check metric save shapes ----')
+    for metric_type in metrics:
+        per_frame = np.concatenate(per_frame_metrics[metric_type], axis=0)
+        print(metric_type, per_frame.shape)
+        np.save(os.path.join(save_path, metric_type + '_per_frame.npy'), per_frame)
 
 
 if __name__ == '__main__':
@@ -593,13 +599,13 @@ if __name__ == '__main__':
     print("Eval examples found:", len(dataset))
 
     # Metrics
-    metrics = ['pve', 'pve_sc', 'pve_pa', 'pve-t', 'pve-t_sc', 'mpjpe', 'mpjpe_sc', 'mpjpe_pa']
+    metrics = ['pves', 'pves_sc', 'pves_pa', 'pve-ts', 'pve-ts_sc', 'mpjpes', 'mpjpes_sc', 'mpjpes_pa']
     metrics.extend([metric + '_samples_min' for metric in metrics ])
     metrics.extend(['verts_samples_dist_from_mean', 'joints3D_coco_samples_dist_from_mean', 'joints3D_coco_invis_samples_dist_from_mean'])
     metrics.append('hrnet_joints2D_l2es')
     metrics.append('hrnet_joints2Dsamples_l2es')
 
-    save_path = '/scratch/as2562/ProHMR/evaluations/3dpw'
+    save_path = '/scratch/as2562/ProHMR/evaluations/3dpw_{}_samples'.format(args.num_samples)
     if selected_fnames is not None:
         save_path += '_selected_fnames_occluded_joints'
     if not os.path.exists(save_path):
@@ -610,7 +616,7 @@ if __name__ == '__main__':
                   eval_dataset=dataset,
                   metrics=metrics,
                   device=device,
-                  vis_save_path=save_path,
+                  save_path=save_path,
                   num_pred_samples=args.num_samples,
                   num_workers=4,
                   pin_memory=True,
