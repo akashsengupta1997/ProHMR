@@ -14,7 +14,7 @@ import my_config
 from prohmr.configs import get_config, prohmr_config
 from prohmr.models import ProHMR
 from prohmr.models.smpl_mine import SMPL
-from prohmr.utils.pose_utils import compute_similarity_transform_batch, scale_and_translation_transform_batch
+from prohmr.utils.pose_utils import compute_similarity_transform_batch_numpy, scale_and_translation_transform_batch
 from prohmr.utils.geometry import undo_keypoint_normalisation, orthographic_project_torch
 from prohmr.datasets.pw3d_eval_dataset import PW3DEvalDataset
 
@@ -212,14 +212,14 @@ def evaluate_3dpw(model,
 
         # Procrustes analysis
         if 'pve_pa' in metrics:
-            pred_vertices_pa = compute_similarity_transform_batch(pred_vertices_mode, target_vertices)
+            pred_vertices_pa = compute_similarity_transform_batch_numpy(pred_vertices_mode, target_vertices)
             pve_pa_batch = np.linalg.norm(pred_vertices_pa - target_vertices, axis=-1)  # (bs, 6890)
             metric_sums['pve_pa'] += np.sum(pve_pa_batch)  # scalar
             per_frame_metrics['pve_pa'].append(np.mean(pve_pa_batch, axis=-1))
 
         if 'pve_pa_samples_min' in metrics:
             target_vertices_tiled = np.tile(target_vertices, (num_pred_samples, 1, 1))  # (num samples, 6890, 3)
-            pred_vertices_samples_pa = compute_similarity_transform_batch(
+            pred_vertices_samples_pa = compute_similarity_transform_batch_numpy(
                 pred_vertices_samples,
                 target_vertices_tiled)
             pve_pa_per_sample = np.linalg.norm(pred_vertices_samples_pa - target_vertices_tiled, axis=-1)  # (num samples, 6890)
@@ -298,14 +298,14 @@ def evaluate_3dpw(model,
 
         # Procrustes analysis
         if 'mpjpe_pa' in metrics:
-            pred_joints_h36mlsp_pa = compute_similarity_transform_batch(pred_joints_h36mlsp_mode, target_joints_h36mlsp)
+            pred_joints_h36mlsp_pa = compute_similarity_transform_batch_numpy(pred_joints_h36mlsp_mode, target_joints_h36mlsp)
             mpjpe_pa_batch = np.linalg.norm(pred_joints_h36mlsp_pa - target_joints_h36mlsp, axis=-1)  # (bs, 14)
             metric_sums['mpjpe_pa'] += np.sum(mpjpe_pa_batch)  # scalar
             per_frame_metrics['mpjpe_pa'].append(np.mean(mpjpe_pa_batch, axis=-1))
 
         if 'mpjpe_pa_samples_min' in metrics:
             target_joints_h36mlsp_tiled = np.tile(target_joints_h36mlsp, (num_pred_samples, 1, 1))  # (num samples, 14, 3)
-            pred_joints_h36mlsp_samples_pa = compute_similarity_transform_batch(
+            pred_joints_h36mlsp_samples_pa = compute_similarity_transform_batch_numpy(
                 pred_joints_h36mlsp_samples,
                 target_joints_h36mlsp_tiled)
             mpjpe_pa_per_sample = np.linalg.norm(pred_joints_h36mlsp_samples_pa - target_joints_h36mlsp_tiled, axis=-1)  # (num samples, 14)
