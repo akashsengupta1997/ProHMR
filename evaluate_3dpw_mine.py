@@ -68,8 +68,8 @@ def evaluate_3dpw(model,
 
     model.eval()
     for batch_num, samples_batch in enumerate(tqdm(eval_dataloader)):
-        if batch_num == 2:
-            break
+        # if batch_num == 2:
+        #     break
         # ------------------------------- TARGETS and INPUTS -------------------------------
         input = samples_batch['input'].to(device)
         target_pose = samples_batch['pose'].to(device)
@@ -348,7 +348,6 @@ def evaluate_3dpw(model,
         if 'hrnet_joints2D_l2es' in metrics:
             hrnet_joints2D_l2e_batch = np.linalg.norm(pred_joints2D_coco_mode[:, hrnet_joints2D_coco_vis[0], :] - hrnet_joints2D_coco[:, hrnet_joints2D_coco_vis[0], :],
                                                       axis=-1)  # (1, num vis joints)
-            print('hrnet_joints2D_l2e_batch', hrnet_joints2D_l2e_batch.shape)
             assert hrnet_joints2D_l2e_batch.shape[1] == hrnet_joints2D_coco_vis.sum()
 
             metric_sums['hrnet_joints2D_l2es'] += np.sum(hrnet_joints2D_l2e_batch)  # scalar
@@ -359,7 +358,6 @@ def evaluate_3dpw(model,
         if 'hrnet_joints2Dsamples_l2es' in metrics:
             hrnet_joints2Dsamples_l2e_batch = np.linalg.norm(pred_joints2D_coco_samples[:, hrnet_joints2D_coco_vis[0], :] - hrnet_joints2D_coco[:, hrnet_joints2D_coco_vis[0], :],
                                                              axis=-1)  # (num_samples, num vis joints)
-            print('hrnet_joints2Dsamples_l2e_batch', hrnet_joints2Dsamples_l2e_batch.shape)
             assert hrnet_joints2Dsamples_l2e_batch.shape[1] == hrnet_joints2D_coco_vis.sum()
 
             metric_sums['hrnet_joints2Dsamples_l2es'] += np.sum(hrnet_joints2Dsamples_l2e_batch)  # scalar
