@@ -153,7 +153,7 @@ def evaluate_3dpw(model,
         pred_reposed_vertices_samples = smpl_neutral(body_pose=torch.zeros(num_pred_samples, 69, device=device, dtype=torch.float32),
                                                      global_orient=torch.zeros(num_pred_samples, 3, device=device, dtype=torch.float32),
                                                      betas=pred_shape_samples).vertices  # (num_pred_samples, 6890, 3)
-
+        print(pred_vertices_samples.shape, pred_joints_coco_samples.shape)
         # ------------------------------- METRICS -------------------------------
         # Numpy-fying targets
         target_vertices = target_vertices.cpu().detach().numpy()
