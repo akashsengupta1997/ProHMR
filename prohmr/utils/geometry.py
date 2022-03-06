@@ -100,3 +100,24 @@ def perspective_projection(points: torch.Tensor,
     projected_points = torch.einsum('bij,bkj->bki', K, projected_points)
 
     return projected_points[:, :, :-1]
+
+
+def undo_keypoint_normalisation(normalised_keypoints, img_wh):
+    """
+    Converts normalised keypoints from [-1, 1] space to pixel space i.e. [0, img_wh]
+    """
+    keypoints = (normalised_keypoints + 1) * (img_wh/2.0)
+    return keypoints
+
+
+def orthographic_project_torch(points3D, cam_params, scale_first=False):
+    """
+    Scaled orthographic projection (i.e. weak perspective projection).
+    :param points3D: (B, N, 3) batch of 3D point sets.
+    :param cam_params: (B, 3) batch of weak-perspective camera parameters (scale, trans x, trans y)
+    """
+    if not scale_first:
+        proj_points = cam_params[:, None, [0]] * (points3D[:, :, :2] + cam_params[:, None, 1:])
+    else:
+        proj_points = cam_params[:, None, [0]] * points3D[:, :, :2] + cam_params[:, None, 1:]
+    return proj_points

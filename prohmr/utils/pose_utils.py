@@ -57,6 +57,13 @@ def compute_similarity_transform(S1: torch.Tensor, S2: torch.Tensor) -> torch.Te
 
     return S1_hat.permute(0, 2, 1)
 
+def compute_similarity_transform_batch(S1, S2):
+    """Batched version of compute_similarity_transform."""
+    S1_hat = np.zeros_like(S1)
+    for i in range(S1.shape[0]):
+        S1_hat[i] = compute_similarity_transform(S1[i], S2[i])
+    return S1_hat
+
 def reconstruction_error(S1, S2) -> np.array:
     """
     Computes the mean Euclidean distance of 2 set of points S1, S2 after performing Procrustes alignment.
@@ -69,6 +76,27 @@ def reconstruction_error(S1, S2) -> np.array:
     S1_hat = compute_similarity_transform(S1, S2)
     re = torch.sqrt( ((S1_hat - S2)** 2).sum(dim=-1)).mean(dim=-1)
     return re.cpu().numpy()
+
+def scale_and_translation_transform_batch(P, T):
+    """
+    First Normalises batch of input 3D meshes P such that each mesh has mean (0, 0, 0) and
+    RMS distance from mean = 1.
+    Then transforms P such that it has the same mean and RMSD as T.
+    :param P: (batch_size, N, 3) batch of N 3D meshes to transform.
+    :param T: (batch_size, N, 3) batch of N reference 3D meshes.
+    :return: P transformed
+    """
+    P_mean = np.mean(P, axis=1, keepdims=True)
+    P_trans = P - P_mean
+    P_scale = np.sqrt(np.sum(P_trans ** 2, axis=(1, 2), keepdims=True) / P.shape[1])
+    P_normalised = P_trans / P_scale
+
+    T_mean = np.mean(T, axis=1, keepdims=True)
+    T_scale = np.sqrt(np.sum((T - T_mean) ** 2, axis=(1, 2), keepdims=True) / P.shape[1])
+
+    P_transformed = P_normalised * T_scale + T_mean
+
+    return P_transformed
 
 def eval_pose(pred_joints, gt_joints) -> Tuple[np.array, np.array]:
     """

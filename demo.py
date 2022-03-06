@@ -54,7 +54,7 @@ else:
 model = ProHMR.load_from_checkpoint(args.checkpoint, strict=False, cfg=model_cfg).to(device)
 model.eval()
 model_cfg.defrost()
-model_cfg.TRAIN.NUM_TEST_SAMPLES = args.num_samples
+model_cfg.TRAIN.NUM_TEST_SAMPLES = args.num_samples + 1
 model_cfg.freeze()
 
 if args.run_fitting:
@@ -94,11 +94,6 @@ for i, batch in enumerate(tqdm(dataloader)):
         
         - log_prob: (1, num_samples) tensor
         - conditioning_feats: (1, 2047) tensor
-        
-        TODO add these outputs:
-        - pred_keypoints_3d_h36m: (1, num_samples, 14, 3) tensor
-        - pred_keypoints_3d_coco: (1, num_samples, 17, 3) tensor
-        - pred_keypoints_2d_coco: (1, num_samples, 17, 2) tensor
         """
         # print(out.keys())
         # for key in out:
@@ -108,9 +103,6 @@ for i, batch in enumerate(tqdm(dataloader)):
         #     elif isinstance(out[key], dict):
         #         for key2 in out[key]:
         #             print(key2, out[key][key2].shape)
-        print(out['pred_cam'])
-        print(out['pred_smpl_params']['betas'])
-        print(out['pred_smpl_params']['global_orient'])
 
     batch_size = batch['img'].shape[0]
     for n in range(batch_size):
