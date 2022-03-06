@@ -75,8 +75,8 @@ def evaluate_3dpw(model,
         target_pose = samples_batch['pose'].to(device)
         target_shape = samples_batch['shape'].to(device)
         target_gender = samples_batch['gender'][0]
-        hrnet_joints2D_coco = samples_batch['hrnet_kps']
-        hrnet_joints2D_coco_vis = samples_batch['hrnet_kps_vis']
+        hrnet_joints2D_coco = samples_batch['hrnet_kps'].cpu().detach().numpy()
+        hrnet_joints2D_coco_vis = samples_batch['hrnet_kps_vis'].cpu().detach().numpy()
         fname = samples_batch['fname']
 
         if target_gender == 'm':
