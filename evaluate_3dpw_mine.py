@@ -68,8 +68,8 @@ def evaluate_3dpw(model,
 
     model.eval()
     for batch_num, samples_batch in enumerate(tqdm(eval_dataloader)):
-        # if batch_num == 2:
-        #     break
+        if batch_num == 2:
+            break
         # ------------------------------- TARGETS and INPUTS -------------------------------
         input = samples_batch['input'].to(device)
         target_pose = samples_batch['pose'].to(device)
