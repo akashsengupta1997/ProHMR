@@ -436,14 +436,14 @@ def evaluate_single_in_multitasknet_ssp3d(model,
             body_vis_rgb_samples = []
             body_vis_rgb_rot_samples = []
             for i in range(num_samples_to_visualise):
-                print('IN EVAL 1', pred_cam_t)
+                print('\nIN EVAL 1', pred_cam_t)
                 body_vis_rgb_samples.append(renderer(vertices=pred_vertices_samples[i],
                                                      camera_translation=pred_cam_t,
                                                      image=vis_img[0],
                                                      unnormalise_img=False))
                 print('IN EVAL 2', pred_cam_t)
                 body_vis_rgb_rot_samples.append(renderer(vertices=pred_vertices_samples[i],
-                                                         camera_translation=pred_cam_t,
+                                                         camera_translation=pred_cam_t if not extreme_crop else reposed_cam_t,
                                                          image=np.zeros_like(vis_img[0]),
                                                          unnormalise_img=False,
                                                          angle=np.pi / 2.,
