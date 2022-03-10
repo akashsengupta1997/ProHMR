@@ -398,9 +398,7 @@ def evaluate_single_in_multitasknet_ssp3d(model,
             vis_img = samples_batch['vis_img'].numpy()
             vis_img = np.transpose(vis_img, [0, 2, 3, 1])
 
-            print(out['pred_cam_t'])
             pred_cam_t = out['pred_cam_t'][0, 0, :].cpu().detach().numpy()
-            print(pred_cam_t)
 
             # Uncertainty Computation
             # Uncertainty computed by sampling + average distance from mean
@@ -454,8 +452,9 @@ def evaluate_single_in_multitasknet_ssp3d(model,
                 plt.subplot(121)
                 plt.imshow(body_vis_rgb_samples[i])
                 plt.subplot(122)
-                plt.imshow(np.transpose(input[0].cpu().detach().numpy()), [1, 2, 0])
+                plt.imshow(np.transpose(input[0].cpu().detach().numpy(), [1, 2, 0]))
                 plt.show()
+                matplotlib.use('agg')
 
             # Save samples
             samples_save_path = os.path.join(save_path, os.path.splitext(fname[0])[0] + '_samples.npy')
