@@ -449,6 +449,14 @@ def evaluate_single_in_multitasknet_ssp3d(model,
                                                          angle=np.pi / 2.,
                                                          axis=[0., 1., 0.]))
 
+                matplotlib.use('tkagg')
+                plt.figure()
+                plt.subplot(121)
+                plt.imshow(body_vis_rgb_samples[i])
+                plt.subplot(122)
+                plt.imshow(np.transpose(input[0].cpu().detach().numpy()), [1, 2, 0])
+                plt.show()
+
             # Save samples
             samples_save_path = os.path.join(save_path, os.path.splitext(fname[0])[0] + '_samples.npy')
             np.save(samples_save_path, pred_vertices_samples)
