@@ -402,23 +402,23 @@ def evaluate_3dpw(model,
 
             # Render predicted meshes
             body_vis_rgb_mode = renderer(vertices=pred_vertices_mode[0],
-                                         camera_translation=pred_cam_t,
+                                         camera_translation=pred_cam_t.copy(),
                                          image=vis_img[0],
                                          unnormalise_img=False)
             body_vis_rgb_mode_rot = renderer(vertices=pred_vertices_mode[0],
-                                             camera_translation=pred_cam_t,
+                                             camera_translation=pred_cam_t.copy(),
                                              image=np.zeros_like(vis_img[0]),
                                              unnormalise_img=False,
                                              angle=np.pi/2.,
                                              axis=[0., 1., 0.])
 
             reposed_body_vis_rgb_mean = renderer(vertices=pred_reposed_vertices_mean[0],
-                                                 camera_translation=reposed_cam_t,
+                                                 camera_translation=reposed_cam_t.copy(),
                                                  image=np.zeros_like(vis_img[0]),
                                                  unnormalise_img=False,
                                                  flip_updown=False)
             reposed_body_vis_rgb_mean_rot = renderer(vertices=pred_reposed_vertices_mean[0],
-                                                     camera_translation=reposed_cam_t,
+                                                     camera_translation=reposed_cam_t.copy(),
                                                      image=np.zeros_like(vis_img[0]),
                                                      unnormalise_img=False,
                                                      angle=np.pi / 2.,
@@ -429,11 +429,11 @@ def evaluate_3dpw(model,
             body_vis_rgb_rot_samples = []
             for i in range(num_samples_to_visualise):
                 body_vis_rgb_samples.append(renderer(vertices=pred_vertices_samples[i],
-                                                     camera_translation=pred_cam_t,
+                                                     camera_translation=pred_cam_t.copy(),
                                                      image=vis_img[0],
                                                      unnormalise_img=False))
                 body_vis_rgb_rot_samples.append(renderer(vertices=pred_vertices_samples[i],
-                                                         camera_translation=pred_cam_t,
+                                                         camera_translation=pred_cam_t.copy(),
                                                          image=np.zeros_like(vis_img[0]),
                                                          unnormalise_img=False,
                                                          angle=np.pi / 2.,

@@ -350,6 +350,7 @@ def evaluate_single_in_multitasknet_ssp3d(model,
             metric_sums['num_false_negatives'] += np.sum(num_fn)
             iou_per_frame = num_tp / (num_tp + num_fp + num_fn)
             per_frame_metrics['silhouette_ious'].append(iou_per_frame)  # (1,)
+            # TODO check silhouette eval and add silhouette visualisation
 
         # -------------------------------- 2D Metrics after Averaging over Samples ---------------------------
         if 'joints2Dsamples_l2es' in metrics_to_track:
@@ -359,7 +360,7 @@ def evaluate_single_in_multitasknet_ssp3d(model,
 
             metric_sums['joints2Dsamples_l2es'] += np.sum(joints2Dsamples_l2e_batch)  # scalar
             metric_sums['num_vis_joints2Dsamples'] += np.prod(joints2Dsamples_l2e_batch.shape)
-            per_frame_metrics['joints2Dsamples_l2es'].append(np.mean(joints2Dsamples_l2e_batch, axis=-1, keepdims=True))  # (1,)
+            per_frame_metrics['joints2Dsamples_l2es'].append(np.mean(joints2Dsamples_l2e_batch)[None])  # (1,)
 
         if 'silhouettesamples_ious' in metrics_to_track:
             pred_silhouette_samples = []
@@ -449,17 +450,6 @@ def evaluate_single_in_multitasknet_ssp3d(model,
                                                          unnormalise_img=False,
                                                          angle=np.pi / 2.,
                                                          axis=[0., 1., 0.]))
-
-                matplotlib.use('tkagg')
-                plt.figure()
-                plt.subplot(131)
-                plt.imshow(body_vis_rgb_samples[i])
-                plt.subplot(132)
-                plt.imshow(body_vis_rgb_samples[i])
-                plt.subplot(133)
-                plt.imshow(np.transpose(input[0].cpu().detach().numpy(), [1, 2, 0]))
-                plt.show()
-                matplotlib.use('agg')
 
             # Save samples
             samples_save_path = os.path.join(save_path, os.path.splitext(fname[0])[0] + '_samples.npy')
