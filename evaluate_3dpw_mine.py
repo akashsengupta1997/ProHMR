@@ -410,7 +410,7 @@ def evaluate_3dpw(model,
                                          unnormalise_img=False)
             body_vis_rgb_mode_rot = renderer(vertices=pred_vertices_mode[0],
                                              camera_translation=pred_cam_t,
-                                             image=vis_img[0],
+                                             image=np.zeros_like(vis_img[0]),
                                              unnormalise_img=False,
                                              angle=np.pi/2.,
                                              axis=[0., 1., 0.])
