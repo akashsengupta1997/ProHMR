@@ -410,8 +410,9 @@ def evaluate_3dpw(model,
                                              angle=np.pi/2.,
                                              axis=[0., 1., 0.])
 
+            print(pred_cam_t)
             reposed_body_vis_rgb_mean = renderer(vertices=pred_reposed_vertices_mean[0],
-                                                 camera_translation=pred_cam_t,
+                                                 camera_translation=pred_cam_t, # TODO
                                                  image=np.zeros_like(vis_img[0]),
                                                  unnormalise_img=False,
                                                  flip_updown=False)
@@ -432,7 +433,7 @@ def evaluate_3dpw(model,
                                                      unnormalise_img=False))
                 body_vis_rgb_rot_samples.append(renderer(vertices=pred_vertices_samples[i],
                                                          camera_translation=pred_cam_t,
-                                                         image=vis_img[0],
+                                                         image=np.zeros_like(vis_img[0]),
                                                          unnormalise_img=False,
                                                          angle=np.pi / 2.,
                                                          axis=[0., 1., 0.]))
@@ -536,11 +537,12 @@ def evaluate_3dpw(model,
                 # Plot PVE-PA pred vs target comparison
                 plt.subplot(num_row, num_col, subplot_count)
                 plt.gca().axis('off')
-                plt.gca().invert_yaxis()
                 plt.text(0.5, 0.5, s='PVE-PA')
                 subplot_count += 1
+
                 plt.subplot(num_row, num_col, subplot_count)
                 plt.gca().axis('off')
+                plt.gca().invert_yaxis()
                 plt.scatter(target_vertices[0, :, 0],
                             target_vertices[0, :, 1],
                             s=0.02,
@@ -585,6 +587,7 @@ def evaluate_3dpw(model,
                 plt.gca().axis('off')
                 plt.text(0.5, 0.5, s='PVE-T-SC')
                 subplot_count += 1
+
                 plt.subplot(num_row, num_col, subplot_count)
                 plt.gca().axis('off')
                 plt.scatter(target_reposed_vertices[0, :, 0],
@@ -627,11 +630,12 @@ def evaluate_3dpw(model,
             # Plot per-vertex uncertainties
             plt.subplot(num_row, num_col, subplot_count)
             plt.gca().axis('off')
-            plt.gca().invert_yaxis()
             plt.text(0.5, 0.5, s='Uncertainty for\nPVE')
             subplot_count += 1
+
             plt.subplot(num_row, num_col, subplot_count)
             plt.gca().axis('off')
+            plt.gca().invert_yaxis()
             norm = plt.Normalize(vmin=0.0, vmax=0.2, clip=True)
             plt.scatter(pred_vertices_sc[0, :, 0],
                         pred_vertices_sc[0, :, 1],
@@ -657,11 +661,12 @@ def evaluate_3dpw(model,
 
             plt.subplot(num_row, num_col, subplot_count)
             plt.gca().axis('off')
-            plt.gca().invert_yaxis()
             plt.text(0.5, 0.5, s='Uncertainty for\nPVE-SC')
             subplot_count += 1
+
             plt.subplot(num_row, num_col, subplot_count)
             plt.gca().axis('off')
+            plt.gca().invert_yaxis()
             norm = plt.Normalize(vmin=0.0, vmax=0.2, clip=True)
             plt.scatter(pred_vertices_pa[0, :, 0],
                         pred_vertices_pa[0, :, 1],

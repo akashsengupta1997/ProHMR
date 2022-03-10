@@ -105,8 +105,9 @@ class Renderer:
                 np.radians(180), [1, 0, 0])
             mesh.apply_transform(rot)
 
-        if angle and axis:
+        if angle is not None:
             # Apply given mesh rotation to the mesh - useful for rendering from different views
+            print('HERE in angle')
             R = trimesh.transformations.rotation_matrix(math.radians(angle), axis)
             mesh.apply_transform(R)
 
