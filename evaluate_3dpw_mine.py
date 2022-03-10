@@ -713,7 +713,7 @@ def evaluate_3dpw(model,
             subplot_count += 1
 
             # Plot samples from predicted distribution
-            for i in range(2 * num_samples_to_visualise):
+            for i in range(2 * num_samples_to_visualise - 2):
                 plt.subplot(num_row, num_col, subplot_count)
                 plt.gca().axis('off')
                 plt.imshow(body_vis_rgb_samples[i])
