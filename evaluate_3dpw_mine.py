@@ -17,7 +17,7 @@ from prohmr.configs import get_config, prohmr_config
 from prohmr.models import ProHMR
 from prohmr.models.smpl_mine import SMPL
 from prohmr.utils.pose_utils import compute_similarity_transform_batch_numpy, scale_and_translation_transform_batch
-from prohmr.utils.geometry import undo_keypoint_normalisation, orthographic_project_torch
+from prohmr.utils.geometry import undo_keypoint_normalisation, orthographic_project_torch, convert_weak_perspective_to_camera_translation
 from prohmr.utils.renderer import Renderer
 from prohmr.utils.sampling_utils import compute_vertex_uncertainties_from_samples
 
@@ -25,6 +25,7 @@ import subsets
 
 
 def evaluate_3dpw(model,
+                  model_cfg,
                   eval_dataset,
                   metrics_to_track,
                   device,
@@ -66,13 +67,18 @@ def evaluate_3dpw(model,
         elif metric == 'hrnet_joints2Dsamples_l2es':
             metric_sums['num_vis_hrnet_joints2Dsamples'] = 0
 
-
     fname_per_frame = []
     pose_per_frame = []
     shape_per_frame = []
     cam_per_frame = []
     if save_per_frame_uncertainty:
         vertices_uncertainty_per_frame = []
+
+    renderer = Renderer(model_cfg, faces=model.smpl.faces)
+    reposed_cam_wp = np.array([0.85, 0., 0.])
+    reposed_cam_t = convert_weak_perspective_to_camera_translation(cam_wp=reposed_cam_wp,
+                                                                   focal_length=model_cfg.EXTRA.FOCAL_LENGTH,
+                                                                   resolution=model_cfg.MODEL.IMAGE_SIZE)
 
     model.eval()
     for batch_num, samples_batch in enumerate(tqdm(eval_dataloader)):
@@ -410,14 +416,13 @@ def evaluate_3dpw(model,
                                              angle=np.pi/2.,
                                              axis=[0., 1., 0.])
 
-            print(pred_cam_t)
             reposed_body_vis_rgb_mean = renderer(vertices=pred_reposed_vertices_mean[0],
-                                                 camera_translation=pred_cam_t, # TODO
+                                                 camera_translation=reposed_cam_t,
                                                  image=np.zeros_like(vis_img[0]),
                                                  unnormalise_img=False,
                                                  flip_updown=False)
             reposed_body_vis_rgb_mean_rot = renderer(vertices=pred_reposed_vertices_mean[0],
-                                                     camera_translation=pred_cam_t,
+                                                     camera_translation=reposed_cam_t,
                                                      image=np.zeros_like(vis_img[0]),
                                                      unnormalise_img=False,
                                                      angle=np.pi / 2.,
@@ -581,7 +586,7 @@ def evaluate_3dpw(model,
                 plt.gca().set_aspect('equal', adjustable='box')
                 plt.text(-0.6, -0.9, s='PVE-PA: {:.4f}'.format(per_frame_metrics['pves_pa'][batch_num][0]))
                 subplot_count += 1
-            
+
             if 'pve-ts_sc' in metrics_to_track:
                 plt.subplot(num_row, num_col, subplot_count)
                 plt.gca().axis('off')
@@ -839,9 +844,6 @@ if __name__ == '__main__':
     model_cfg.TRAIN.NUM_TEST_SAMPLES = args.num_samples + 1
     model_cfg.freeze()
 
-    # Renderer for visualisation
-    renderer = Renderer(model_cfg, faces=model.smpl.faces)
-
     # Setup evaluation dataset
     if args.use_subset:
         selected_fnames = subsets.PW3D_OCCLUDED_JOINTS
@@ -875,6 +877,7 @@ if __name__ == '__main__':
 
     # Run evaluation
     evaluate_3dpw(model=model,
+                  model_cfg=model_cfg,
                   eval_dataset=dataset,
                   metrics_to_track=metrics,
                   device=device,

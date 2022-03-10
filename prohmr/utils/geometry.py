@@ -1,6 +1,7 @@
 from typing import Optional
 import torch
 from torch.nn import functional as F
+import numpy as np
 
 def aa_to_rotmat(theta: torch.Tensor):
     """
@@ -121,3 +122,8 @@ def orthographic_project_torch(points3D, cam_params, scale_first=False):
     else:
         proj_points = cam_params[:, None, [0]] * points3D[:, :, :2] + cam_params[:, None, 1:]
     return proj_points
+
+
+def convert_weak_perspective_to_camera_translation(cam_wp, focal_length, resolution):
+    cam_t = np.array([cam_wp[1], cam_wp[2], 2 * focal_length / (resolution * cam_wp[0] + 1e-9)])
+    return cam_t

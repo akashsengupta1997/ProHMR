@@ -62,7 +62,7 @@ class Renderer:
     def __call__(self,
                  vertices: np.array,
                  camera_translation: np.array,
-                 image: torch.Tensor,
+                 image,
                  unnormalise_img: bool = True,
                  full_frame: bool = False,
                  imgname: Optional[str] = None,
