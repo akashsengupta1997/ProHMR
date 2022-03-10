@@ -7,6 +7,7 @@ import trimesh
 import cv2
 from yacs.config import CfgNode
 from typing import List, Optional
+import math
 
 def create_raymond_lights() -> List[pyrender.Node]:
     """
@@ -52,34 +53,40 @@ class Renderer:
         self.focal_length = cfg.EXTRA.FOCAL_LENGTH
         self.img_res = cfg.MODEL.IMAGE_SIZE
         self.renderer = pyrender.OffscreenRenderer(viewport_width=self.img_res,
-                                       viewport_height=self.img_res,
-                                       point_size=1.0)
+                                                   viewport_height=self.img_res,
+                                                   point_size=1.0)
 
         self.camera_center = [self.img_res // 2, self.img_res // 2]
         self.faces = faces
 
     def __call__(self,
-                vertices: np.array,
-                camera_translation: np.array,
-                image: torch.Tensor,
-                full_frame: bool = False,
-                imgname: Optional[str] = None) -> np.array:
+                 vertices: np.array,
+                 camera_translation: np.array,
+                 image: torch.Tensor,
+                 unnormalise_img: bool = True,
+                 full_frame: bool = False,
+                 imgname: Optional[str] = None,
+                 angle: Optional[float] = None,
+                 axis: Optional[List] = None) -> np.array:
         """
         Render meshes on input image
         Args:
             vertices (np.array): Array of shape (V, 3) containing the mesh vertices.
             camera_translation (np.array): Array of shape (3,) with the camera translation.
-            image (torch.Tensor): Tensor of shape (3, H, W) containing the image crop with normalized pixel values.
+            image (torch.Tensor):
+                if unnormalise_img: Tensor of shape (3, H, W) containing the image crop with normalized pixel values.
+                else: Tensor of shape (H, W, 3) containing the image crop with raw pixel values.
             full_frame (bool): If True, then render on the full image.
             imgname (Optional[str]): Contains the original image filenamee. Used only if full_frame == True.
         """
-        
+
         if full_frame:
             image = cv2.imread(imgname).astype(np.float32)[:, :, ::-1] / 255.
         else:
-            image = image.clone() * torch.tensor(self.cfg.MODEL.IMAGE_STD, device=image.device).reshape(3,1,1)
-            image = image + torch.tensor(self.cfg.MODEL.IMAGE_MEAN, device=image.device).reshape(3,1,1)
-            image = image.permute(1, 2, 0).cpu().numpy()
+            if unnormalise_img:
+                image = image.clone() * torch.tensor(self.cfg.MODEL.IMAGE_STD, device=image.device).reshape(3,1,1)
+                image = image + torch.tensor(self.cfg.MODEL.IMAGE_MEAN, device=image.device).reshape(3,1,1)
+                image = image.permute(1, 2, 0).cpu().numpy()
 
         renderer = pyrender.OffscreenRenderer(viewport_width=image.shape[1],
                                               viewport_height=image.shape[0],
@@ -95,6 +102,12 @@ class Renderer:
         rot = trimesh.transformations.rotation_matrix(
             np.radians(180), [1, 0, 0])
         mesh.apply_transform(rot)
+
+        if angle and axis:
+            # Apply given mesh rotation to the mesh - useful for rendering from different views
+            R = trimesh.transformations.rotation_matrix(math.radians(angle), axis)
+            mesh.apply_transform(R)
+
         mesh = pyrender.Mesh.from_trimesh(mesh, material=material)
 
         scene = pyrender.Scene(bg_color=[0.0, 0.0, 0.0, 0.0],

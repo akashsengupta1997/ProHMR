@@ -4,8 +4,8 @@ J_REGRESSOR_EXTRA = 'data/J_regressor_extra.npy'
 COCOPLUS_REGRESSOR = 'data/cocoplus_regressor.npy'
 H36M_REGRESSOR = 'data/J_regressor_h36m.npy'
 # ------------------------------------ Constants ------------------------------------
-#FOCAL_LENGTH = 5000.
-FOCAL_LENGTH = 300.
+# FOCAL_LENGTH = 5000.
+# FOCAL_LENGTH = 300.
 
 # ------------------------------------ Measurements ------------------------------------
 # Metail selected measurement names (from SS measurement service)
