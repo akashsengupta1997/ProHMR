@@ -68,7 +68,8 @@ class Renderer:
                  imgname: Optional[str] = None,
                  angle: Optional[float] = None,
                  axis: Optional[List] = None,
-                 flip_updown: bool = True) -> np.array:
+                 flip_updown: bool = True,
+                 return_silhouette: bool = False) -> np.array:
         """
         Render meshes on input image
         Args:
@@ -135,4 +136,8 @@ class Renderer:
 
         output_img = output_img.astype(np.float32)
         renderer.delete()
-        return output_img
+
+        if return_silhouette:
+            return output_img, valid_mask
+        else:
+            return output_img
