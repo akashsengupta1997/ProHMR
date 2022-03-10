@@ -857,7 +857,7 @@ if __name__ == '__main__':
     metrics.append('joints2D_l2es')
     metrics.append('joints2Dsamples_l2es')
 
-    save_path = '/data/cvfs/as2562/SPIN/evaluations/ssp3d'
+    save_path = '/scratch/as2562/ProHMR/evaluations/ssp3d_{}_samples'.format(args.num_samples)
     if args.occlude is not None:
         save_path += '_occlude_{}'.format(args.occlude)
     if args.extreme_crop:
