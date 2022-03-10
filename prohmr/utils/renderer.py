@@ -98,7 +98,9 @@ class Renderer:
             alphaMode='OPAQUE',
             baseColorFactor=(1.0, 1.0, 0.9, 1.0))
 
+        print('IN REND 1', camera_translation)
         camera_translation[0] *= -1.
+        print('IN REND 2', camera_translation)
 
         mesh = trimesh.Trimesh(vertices.copy(), self.faces.copy())
         if flip_updown:
