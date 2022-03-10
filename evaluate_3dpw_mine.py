@@ -412,14 +412,16 @@ def evaluate_3dpw(model,
 
             reposed_body_vis_rgb_mean = renderer(vertices=pred_reposed_vertices_mean[0],
                                                  camera_translation=pred_cam_t,
-                                                 image=vis_img[0],
-                                                 unnormalise_img=False)
+                                                 image=np.zeros_like(vis_img[0]),
+                                                 unnormalise_img=False,
+                                                 flip_updown=False)
             reposed_body_vis_rgb_mean_rot = renderer(vertices=pred_reposed_vertices_mean[0],
                                                      camera_translation=pred_cam_t,
-                                                     image=vis_img[0],
+                                                     image=np.zeros_like(vis_img[0]),
                                                      unnormalise_img=False,
                                                      angle=np.pi / 2.,
-                                                     axis=[0., 1., 0.])
+                                                     axis=[0., 1., 0.],
+                                                     flip_updown=False)
 
             body_vis_rgb_samples = []
             body_vis_rgb_rot_samples = []
@@ -490,6 +492,7 @@ def evaluate_3dpw(model,
                 subplot_count += 1
                 plt.subplot(num_row, num_col, subplot_count)
                 plt.gca().axis('off')
+                plt.gca().invert_yaxis()
                 plt.scatter(target_vertices[0, :, 0],
                             target_vertices[0, :, 1],
                             s=0.02,
@@ -503,6 +506,7 @@ def evaluate_3dpw(model,
 
                 plt.subplot(num_row, num_col, subplot_count)
                 plt.gca().axis('off')
+                plt.gca().invert_yaxis()
                 norm = plt.Normalize(vmin=0.0, vmax=0.2, clip=True)
                 plt.scatter(pred_vertices_sc[0, :, 0],
                             pred_vertices_sc[0, :, 1],
@@ -516,6 +520,7 @@ def evaluate_3dpw(model,
 
                 plt.subplot(num_row, num_col, subplot_count)
                 plt.gca().axis('off')
+                plt.gca().invert_yaxis()
                 norm = plt.Normalize(vmin=0.0, vmax=0.2, clip=True)
                 plt.scatter(pred_vertices_sc[0, :, 2], # Equivalent to Rotated 90° about y axis
                             pred_vertices_sc[0, :, 1],
@@ -531,6 +536,7 @@ def evaluate_3dpw(model,
                 # Plot PVE-PA pred vs target comparison
                 plt.subplot(num_row, num_col, subplot_count)
                 plt.gca().axis('off')
+                plt.gca().invert_yaxis()
                 plt.text(0.5, 0.5, s='PVE-PA')
                 subplot_count += 1
                 plt.subplot(num_row, num_col, subplot_count)
@@ -548,6 +554,7 @@ def evaluate_3dpw(model,
 
                 plt.subplot(num_row, num_col, subplot_count)
                 plt.gca().axis('off')
+                plt.gca().invert_yaxis()
                 norm = plt.Normalize(vmin=0.0, vmax=0.2, clip=True)
                 plt.scatter(pred_vertices_pa[0, :, 0],
                             pred_vertices_pa[0, :, 1],
@@ -561,6 +568,7 @@ def evaluate_3dpw(model,
 
                 plt.subplot(num_row, num_col, subplot_count)
                 plt.gca().axis('off')
+                plt.gca().invert_yaxis()
                 norm = plt.Normalize(vmin=0.0, vmax=0.2, clip=True)
                 plt.scatter(pred_vertices_pa[0, :, 2], # Equivalent to Rotated 90° about y axis
                             pred_vertices_pa[0, :, 1],
@@ -619,6 +627,7 @@ def evaluate_3dpw(model,
             # Plot per-vertex uncertainties
             plt.subplot(num_row, num_col, subplot_count)
             plt.gca().axis('off')
+            plt.gca().invert_yaxis()
             plt.text(0.5, 0.5, s='Uncertainty for\nPVE')
             subplot_count += 1
             plt.subplot(num_row, num_col, subplot_count)
@@ -635,6 +644,7 @@ def evaluate_3dpw(model,
 
             plt.subplot(num_row, num_col, subplot_count)
             plt.gca().axis('off')
+            plt.gca().invert_yaxis()
             norm = plt.Normalize(vmin=0.0, vmax=0.2, clip=True)
             plt.scatter(pred_vertices_sc[0, :, 2],
                         pred_vertices_sc[0, :, 1],
@@ -647,6 +657,7 @@ def evaluate_3dpw(model,
 
             plt.subplot(num_row, num_col, subplot_count)
             plt.gca().axis('off')
+            plt.gca().invert_yaxis()
             plt.text(0.5, 0.5, s='Uncertainty for\nPVE-SC')
             subplot_count += 1
             plt.subplot(num_row, num_col, subplot_count)
@@ -663,6 +674,7 @@ def evaluate_3dpw(model,
 
             plt.subplot(num_row, num_col, subplot_count)
             plt.gca().axis('off')
+            plt.gca().invert_yaxis()
             norm = plt.Normalize(vmin=0.0, vmax=0.2, clip=True)
             plt.scatter(pred_vertices_pa[0, :, 2],
                         # Equivalent to Rotated 90° about y axis
@@ -682,8 +694,8 @@ def evaluate_3dpw(model,
             plt.close()
 
             # ------------------ Samples from Predicted Distribution Figure ------------------
-            num_subplots = num_samples_to_visualise * 2
-            num_row = 5
+            num_subplots = num_samples_to_visualise * 2 + 2
+            num_row = 4
             num_col = math.ceil(num_subplots / float(num_row))
 
             subplot_count = 1

@@ -67,15 +67,16 @@ class Renderer:
                  full_frame: bool = False,
                  imgname: Optional[str] = None,
                  angle: Optional[float] = None,
-                 axis: Optional[List] = None) -> np.array:
+                 axis: Optional[List] = None,
+                 flip_updown: bool = True) -> np.array:
         """
         Render meshes on input image
         Args:
             vertices (np.array): Array of shape (V, 3) containing the mesh vertices.
             camera_translation (np.array): Array of shape (3,) with the camera translation.
-            image (torch.Tensor):
-                if unnormalise_img: Tensor of shape (3, H, W) containing the image crop with normalized pixel values.
-                else: Tensor of shape (H, W, 3) containing the image crop with raw pixel values.
+            image:
+                if unnormalise_img: torch.Tensor) of shape (3, H, W) containing the image crop with normalized pixel values.
+                else: np.array of shape (H, W, 3) containing the image crop with raw pixel values.
             full_frame (bool): If True, then render on the full image.
             imgname (Optional[str]): Contains the original image filenamee. Used only if full_frame == True.
         """
@@ -99,9 +100,10 @@ class Renderer:
         camera_translation[0] *= -1.
 
         mesh = trimesh.Trimesh(vertices.copy(), self.faces.copy())
-        rot = trimesh.transformations.rotation_matrix(
-            np.radians(180), [1, 0, 0])
-        mesh.apply_transform(rot)
+        if flip_updown:
+            rot = trimesh.transformations.rotation_matrix(
+                np.radians(180), [1, 0, 0])
+            mesh.apply_transform(rot)
 
         if angle and axis:
             # Apply given mesh rotation to the mesh - useful for rendering from different views
