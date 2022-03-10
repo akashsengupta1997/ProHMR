@@ -80,8 +80,11 @@ def evaluate_single_in_multitasknet_ssp3d(model,
         vertices_uncertainty_per_frame = []
 
     renderer = Renderer(model_cfg, faces=model.smpl.faces)
-    reposed_cam_wp = np.array([0.85, 0., -0.2])
-    reposed_cam_t = convert_weak_perspective_to_camera_translation(cam_wp=reposed_cam_wp,
+    reposed_cam_t = convert_weak_perspective_to_camera_translation(cam_wp=np.array([0.85, 0., -0.2]),
+                                                                   focal_length=model_cfg.EXTRA.FOCAL_LENGTH,
+                                                                   resolution=model_cfg.MODEL.IMAGE_SIZE)
+    if extreme_crop:
+        rot_cam_t = convert_weak_perspective_to_camera_translation(cam_wp=np.array([0.85, 0., 0.]),
                                                                    focal_length=model_cfg.EXTRA.FOCAL_LENGTH,
                                                                    resolution=model_cfg.MODEL.IMAGE_SIZE)
 
@@ -410,23 +413,23 @@ def evaluate_single_in_multitasknet_ssp3d(model,
 
             # Render predicted meshes
             body_vis_rgb_mode = renderer(vertices=pred_vertices_mode[0],
-                                         camera_translation=pred_cam_t,
+                                         camera_translation=pred_cam_t.copy(),  # copy() needed because renderer changes cam_t in place...
                                          image=vis_img[0],
                                          unnormalise_img=False)
             body_vis_rgb_mode_rot = renderer(vertices=pred_vertices_mode[0],
-                                             camera_translation=pred_cam_t,
+                                             camera_translation=pred_cam_t.copy() if not extreme_crop else rot_cam_t.copy(),
                                              image=np.zeros_like(vis_img[0]),
                                              unnormalise_img=False,
                                              angle=np.pi/2.,
                                              axis=[0., 1., 0.])
 
             reposed_body_vis_rgb_mean = renderer(vertices=pred_reposed_vertices_mean[0],
-                                                 camera_translation=reposed_cam_t,
+                                                 camera_translation=reposed_cam_t.copy(),
                                                  image=np.zeros_like(vis_img[0]),
                                                  unnormalise_img=False,
                                                  flip_updown=False)
             reposed_body_vis_rgb_mean_rot = renderer(vertices=pred_reposed_vertices_mean[0],
-                                                     camera_translation=reposed_cam_t,
+                                                     camera_translation=reposed_cam_t.copy(),
                                                      image=np.zeros_like(vis_img[0]),
                                                      unnormalise_img=False,
                                                      angle=np.pi / 2.,
@@ -436,14 +439,12 @@ def evaluate_single_in_multitasknet_ssp3d(model,
             body_vis_rgb_samples = []
             body_vis_rgb_rot_samples = []
             for i in range(num_samples_to_visualise):
-                print('\nIN EVAL 1', pred_cam_t)
                 body_vis_rgb_samples.append(renderer(vertices=pred_vertices_samples[i],
-                                                     camera_translation=pred_cam_t,
+                                                     camera_translation=pred_cam_t.copy(),
                                                      image=vis_img[0],
                                                      unnormalise_img=False))
-                print('IN EVAL 2', pred_cam_t)
                 body_vis_rgb_rot_samples.append(renderer(vertices=pred_vertices_samples[i],
-                                                         camera_translation=pred_cam_t if not extreme_crop else reposed_cam_t,
+                                                         camera_translation=pred_cam_t.copy() if not extreme_crop else rot_cam_t.copy(),
                                                          image=np.zeros_like(vis_img[0]),
                                                          unnormalise_img=False,
                                                          angle=np.pi / 2.,
@@ -451,9 +452,11 @@ def evaluate_single_in_multitasknet_ssp3d(model,
 
                 matplotlib.use('tkagg')
                 plt.figure()
-                plt.subplot(121)
+                plt.subplot(131)
                 plt.imshow(body_vis_rgb_samples[i])
-                plt.subplot(122)
+                plt.subplot(132)
+                plt.imshow(body_vis_rgb_samples[i])
+                plt.subplot(133)
                 plt.imshow(np.transpose(input[0].cpu().detach().numpy(), [1, 2, 0]))
                 plt.show()
                 matplotlib.use('agg')
