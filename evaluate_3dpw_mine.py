@@ -423,7 +423,7 @@ def evaluate_3dpw(model,
 
             body_vis_rgb_samples = []
             body_vis_rgb_rot_samples = []
-            for i in range(num_pred_samples):
+            for i in range(num_samples_to_visualise):
                 body_vis_rgb_samples.append(renderer(vertices=pred_vertices_samples[i],
                                                      camera_translation=pred_cam_t,
                                                      image=vis_img[0],
@@ -866,4 +866,5 @@ if __name__ == '__main__':
                   num_workers=4,
                   pin_memory=True,
                   vis_every_n_batches=vis_every_n_batches,
-                  renderer=renderer)
+                  renderer=renderer,
+                  num_samples_to_visualise=10)
