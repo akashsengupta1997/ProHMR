@@ -375,6 +375,7 @@ def evaluate_3dpw(model,
             metric_sums['hrnet_joints2Dsamples_l2es'] += np.sum(hrnet_joints2Dsamples_l2e_batch)  # scalar
             metric_sums['num_vis_hrnet_joints2Dsamples'] += np.prod(hrnet_joints2Dsamples_l2e_batch.shape)
             per_frame_metrics['hrnet_joints2Dsamples_l2es'].append(np.mean(hrnet_joints2Dsamples_l2e_batch, axis=-1, keepdims=True))  # (1,)
+            print('HERE', np.mean(hrnet_joints2Dsamples_l2e_batch, axis=-1, keepdims=True).shape)
 
         metric_sums['num_datapoints'] += target_pose.shape[0]
 
