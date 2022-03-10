@@ -441,7 +441,7 @@ def evaluate_single_in_multitasknet_ssp3d(model,
                                                      image=vis_img[0],
                                                      unnormalise_img=False))
                 body_vis_rgb_rot_samples.append(renderer(vertices=pred_vertices_samples[i],
-                                                         camera_translation=pred_cam_t,
+                                                         camera_translation=pred_cam_t if not extreme_crop else reposed_cam_t,
                                                          image=np.zeros_like(vis_img[0]),
                                                          unnormalise_img=False,
                                                          angle=np.pi / 2.,
