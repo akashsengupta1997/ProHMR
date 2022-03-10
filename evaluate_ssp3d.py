@@ -58,9 +58,19 @@ def evaluate_single_in_multitasknet_ssp3d(model,
 
         elif metric == 'joints2D_l2es':
             metric_sums['num_vis_joints2D'] = 0
-
         elif metric == 'joints2Dsamples_l2es':
             metric_sums['num_vis_joints2Dsamples'] = 0
+
+        elif metric == 'silhouette_ious':
+            metric_sums['num_true_positives'] = 0.
+            metric_sums['num_false_positives'] = 0.
+            metric_sums['num_true_negatives'] = 0.
+            metric_sums['num_false_negatives'] = 0.
+        elif metric == 'silhouettesamples_ious':
+            metric_sums['num_samples_true_positives'] = 0.
+            metric_sums['num_samples_false_positives'] = 0.
+            metric_sums['num_samples_true_negatives'] = 0.
+            metric_sums['num_samples_false_negatives'] = 0.
 
     fname_per_frame = []
     pose_per_frame = []
@@ -388,7 +398,9 @@ def evaluate_single_in_multitasknet_ssp3d(model,
             vis_img = samples_batch['vis_img'].numpy()
             vis_img = np.transpose(vis_img, [0, 2, 3, 1])
 
+            print(out['pred_cam_t'])
             pred_cam_t = out['pred_cam_t'][0, 0, :].cpu().detach().numpy()
+            print(pred_cam_t)
 
             # Uncertainty Computation
             # Uncertainty computed by sampling + average distance from mean
@@ -858,12 +870,14 @@ if __name__ == '__main__':
     metrics.extend(['verts_samples_dist_from_mean', 'joints3D_coco_samples_dist_from_mean', 'joints3D_coco_invis_samples_dist_from_mean'])
     metrics.append('joints2D_l2es')
     metrics.append('joints2Dsamples_l2es')
+    # metrics.append('silhouette_ious')
+    # metrics.append('silhouettesamples_ious')
 
     save_path = '/scratch/as2562/ProHMR/evaluations/ssp3d_{}_samples'.format(args.num_samples)
     if args.occlude is not None:
         save_path += '_occlude_{}'.format(args.occlude)
     if args.extreme_crop:
-        save_path += '_scale_{}'.format(args.extreme_crop_scale)
+        save_path += '_extreme_crop_scale_{}'.format(args.extreme_crop_scale)
     if not os.path.exists(save_path):
         os.makedirs(save_path)
     print('Saving to:', save_path)
