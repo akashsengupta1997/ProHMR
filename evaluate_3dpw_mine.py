@@ -35,7 +35,6 @@ def evaluate_3dpw(model,
                   pin_memory=True,
                   vis_every_n_batches=1000,
                   num_samples_to_visualise=10,
-                  renderer=None,
                   save_per_frame_uncertainty=True):
 
     eval_dataloader = DataLoader(eval_dataset,
@@ -886,5 +885,4 @@ if __name__ == '__main__':
                   num_workers=4,
                   pin_memory=True,
                   vis_every_n_batches=vis_every_n_batches,
-                  renderer=renderer,
                   num_samples_to_visualise=10)
