@@ -511,6 +511,7 @@ def evaluate_3dpw(model,
                             cmap='jet',
                             norm=norm)
                 plt.gca().set_aspect('equal', adjustable='box')
+                print(per_frame_metrics['pves_sc'][0])
                 plt.text(-0.6, -0.9, s='PVE-SC: {:.4f}'.format(per_frame_metrics['pves_sc'][0]))
                 subplot_count += 1
 
