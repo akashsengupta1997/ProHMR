@@ -74,7 +74,7 @@ def evaluate_3dpw(model,
         vertices_uncertainty_per_frame = []
 
     renderer = Renderer(model_cfg, faces=model.smpl.faces)
-    reposed_cam_wp = np.array([0.85, 0., 0.2])
+    reposed_cam_wp = np.array([0.85, 0., -0.2])
     reposed_cam_t = convert_weak_perspective_to_camera_translation(cam_wp=reposed_cam_wp,
                                                                    focal_length=model_cfg.EXTRA.FOCAL_LENGTH,
                                                                    resolution=model_cfg.MODEL.IMAGE_SIZE)
