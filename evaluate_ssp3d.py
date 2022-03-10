@@ -819,6 +819,8 @@ if __name__ == '__main__':
     parser.add_argument('--extreme_crop', '-EC', action='store_true')
     parser.add_argument('--extreme_crop_scale', '-ECS', type=float)
     parser.add_argument('--num_samples', '-N', type=int, default=25, help='Number of test samples to evaluate with')
+    parser.add_argument('--vis_every', '-V', type=int, default=1)
+
 
     args = parser.parse_args()
 
@@ -876,7 +878,7 @@ if __name__ == '__main__':
                                           num_pred_samples=args.num_samples,
                                           num_workers=args.num_workers,
                                           pin_memory=True,
-                                          vis_every_n_batches=1,
+                                          vis_every_n_batches=args.vis_every,
                                           occlude=args.occlude,
                                           extreme_crop=args.extreme_crop,
                                           num_samples_to_visualise=10,
