@@ -7,7 +7,7 @@ import trimesh
 import cv2
 from yacs.config import CfgNode
 from typing import List, Optional
-import math
+
 
 def create_raymond_lights() -> List[pyrender.Node]:
     """
@@ -104,12 +104,15 @@ class Renderer:
             rot = trimesh.transformations.rotation_matrix(
                 np.radians(180), [1, 0, 0])
             mesh.apply_transform(rot)
+            print('ROT')
+            print(rot)
 
         if angle is not None:
             # Apply given mesh rotation to the mesh - useful for rendering from different views
-            print('HERE in angle')
-            R = trimesh.transformations.rotation_matrix(math.radians(angle), axis)
+            R = trimesh.transformations.rotation_matrix(np.radians(angle), axis)
             mesh.apply_transform(R)
+            print('R')
+            print(R)
 
         mesh = pyrender.Mesh.from_trimesh(mesh, material=material)
 
