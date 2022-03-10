@@ -511,9 +511,7 @@ def evaluate_3dpw(model,
                             cmap='jet',
                             norm=norm)
                 plt.gca().set_aspect('equal', adjustable='box')
-                print(per_frame_metrics['pves_sc'])
-                print(per_frame_metrics['pves_sc'][0])
-                plt.text(-0.6, -0.9, s='PVE-SC: {:.4f}'.format(per_frame_metrics['pves_sc'][0]))
+                plt.text(-0.6, -0.9, s='PVE-SC: {:.4f}'.format(per_frame_metrics['pves_sc'][batch_num][0]))
                 subplot_count += 1
 
                 plt.subplot(num_row, num_col, subplot_count)
@@ -526,7 +524,7 @@ def evaluate_3dpw(model,
                             cmap='jet',
                             norm=norm)
                 plt.gca().set_aspect('equal', adjustable='box')
-                plt.text(-0.6, -0.9, s='PVE-SC: {:.4f}'.format(per_frame_metrics['pves_sc'][0]))
+                plt.text(-0.6, -0.9, s='PVE-SC: {:.4f}'.format(per_frame_metrics['pves_sc'][batch_num][0]))
                 subplot_count += 1
 
             if 'pves_pa' in metrics_to_track:
@@ -558,7 +556,7 @@ def evaluate_3dpw(model,
                             cmap='jet',
                             norm=norm)
                 plt.gca().set_aspect('equal', adjustable='box')
-                plt.text(-0.6, -0.9, s='PVE-PA: {:.4f}'.format(per_frame_metrics['pves_pa'][0]))
+                plt.text(-0.6, -0.9, s='PVE-PA: {:.4f}'.format(per_frame_metrics['pves_pa'][batch_num][0]))
                 subplot_count += 1
 
                 plt.subplot(num_row, num_col, subplot_count)
@@ -571,7 +569,7 @@ def evaluate_3dpw(model,
                             cmap='jet',
                             norm=norm)
                 plt.gca().set_aspect('equal', adjustable='box')
-                plt.text(-0.6, -0.9, s='PVE-PA: {:.4f}'.format(per_frame_metrics['pves_pa'][0]))
+                plt.text(-0.6, -0.9, s='PVE-PA: {:.4f}'.format(per_frame_metrics['pves_pa'][batch_num][0]))
                 subplot_count += 1
             
             if 'pve-ts_sc' in metrics_to_track:
@@ -602,7 +600,7 @@ def evaluate_3dpw(model,
                             cmap='jet',
                             norm=norm)
                 plt.gca().set_aspect('equal', adjustable='box')
-                plt.text(-0.6, -0.9, s='PVE-T-SC: {:.4f}'.format(per_frame_metrics['pve-ts_sc'][0]))
+                plt.text(-0.6, -0.9, s='PVE-T-SC: {:.4f}'.format(per_frame_metrics['pve-ts_sc'][batch_num][0]))
                 subplot_count += 1
 
                 plt.subplot(num_row, num_col, subplot_count)
@@ -615,7 +613,7 @@ def evaluate_3dpw(model,
                             cmap='jet',
                             norm=norm)
                 plt.gca().set_aspect('equal', adjustable='box')
-                plt.text(-0.6, -0.9, s='PVE-T-SC: {:.4f}'.format(per_frame_metrics['pve-ts_sc'][0]))
+                plt.text(-0.6, -0.9, s='PVE-T-SC: {:.4f}'.format(per_frame_metrics['pve-ts_sc'][batch_num][0]))
                 subplot_count += 1
 
             # Plot per-vertex uncertainties
