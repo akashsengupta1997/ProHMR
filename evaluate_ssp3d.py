@@ -336,6 +336,7 @@ def evaluate_single_in_multitasknet_ssp3d(model,
                                                unnormalise_img=False,
                                                return_silhouette=True)
             pred_silhouette_mode = pred_silhouette_mode[None, :, :, 0].astype(np.float32)  # (1, img_wh, img_wh)
+
             true_positive = np.logical_and(pred_silhouette_mode, target_silhouette)
             false_positive = np.logical_and(pred_silhouette_mode, np.logical_not(target_silhouette))
             true_negative = np.logical_and(np.logical_not(pred_silhouette_mode), np.logical_not(target_silhouette))
@@ -373,10 +374,7 @@ def evaluate_single_in_multitasknet_ssp3d(model,
                 pred_silhouette_samples.append(silh_sample[:, :, 0].astype(np.float32))
             pred_silhouette_samples = np.stack(pred_silhouette_samples, axis=0)[None, :, :, :]  # (1, num_samples, img_wh, img_wh)
             target_silhouette_tiled = np.tile(target_silhouette[:, None, :, :], (1, num_pred_samples, 1, 1))  # (1, num_samples, img_wh, img_wh)
-            print('HERE2', pred_silhouette_samples.shape, target_silhouette_tiled.shape,
-                  pred_silhouette_samples.dtype, target_silhouette_tiled.dtype,
-                  np.unique(pred_silhouette_samples), np.unique(target_silhouette_tiled))
-            
+
             true_positive = np.logical_and(pred_silhouette_samples, target_silhouette_tiled)
             false_positive = np.logical_and(pred_silhouette_samples, np.logical_not(target_silhouette_tiled))
             true_negative = np.logical_and(np.logical_not(pred_silhouette_samples), np.logical_not(target_silhouette_tiled))
@@ -507,7 +505,7 @@ def evaluate_single_in_multitasknet_ssp3d(model,
                 plt.subplot(num_row, num_col, subplot_count)
                 plt.gca().axis('off')
                 plt.imshow(pred_silhouette_mode[0].astype(np.int16) - target_silhouette[0].astype(np.int16))
-                plt.text(10, 10, s='mIOU: {:.4f}'.format(per_frame_metrics['silhouette_ious'][0]))
+                plt.text(10, 10, s='mIOU: {:.4f}'.format(per_frame_metrics['silhouette_ious'][batch_num][0]))
             if 'joints2D_l2es' in metrics_to_track:
                 plt.scatter(target_joints2D_coco[0, :, 0],
                             target_joints2D_coco[0, :, 1],
@@ -522,7 +520,7 @@ def evaluate_single_in_multitasknet_ssp3d(model,
                     plt.text(pred_joints2D_coco_mode[0, j, 0],
                              pred_joints2D_coco_mode[0, j, 1],
                              str(j))
-                plt.text(10, 30, s='J2D L2E: {:.4f}'.format(per_frame_metrics['joints2D_l2es'][0]))
+                plt.text(10, 30, s='J2D L2E: {:.4f}'.format(per_frame_metrics['joints2D_l2es'][batch_num][0]))
             subplot_count += 1
 
             if 'pves_sc' in metrics_to_track:
