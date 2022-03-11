@@ -333,7 +333,8 @@ def evaluate_single_in_multitasknet_ssp3d(model,
                                                camera_translation=out['pred_cam_t'][0, 0, :].cpu().detach().numpy(),
                                                image=np.zeros((model_cfg.MODEL.IMAGE_SIZE, model_cfg.MODEL.IMAGE_SIZE, 3)),
                                                unnormalise_img=False,
-                                               return_silhouette=True)[None, :, :]   # (1, img_wh, img_wh)
+                                               return_silhouette=True)
+            pred_silhouette_mode = pred_silhouette_mode[None, :, :]  # (1, img_wh, img_wh)
             print(pred_silhouette_mode.shape, target_silhouette.shape, pred_silhouette_mode.dtype, target_silhouette.dtype,
                   pred_silhouette_mode.max(), target_silhouette.max(), pred_silhouette_mode.min(), target_silhouette.min())
             true_positive = np.logical_and(pred_silhouette_mode, target_silhouette)
