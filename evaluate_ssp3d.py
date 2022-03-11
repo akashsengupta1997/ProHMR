@@ -187,6 +187,7 @@ def evaluate_single_in_multitasknet_ssp3d(model,
         target_reposed_vertices = target_reposed_vertices.cpu().detach().numpy()
         target_joints2D_coco = target_joints2D_coco.cpu().detach().numpy()
         target_joints2D_coco_vis = target_joints2D_coco_vis.cpu().detach().numpy()
+        target_silhouette = target_silhouette.cpu().detach().numpy()
 
         # Numpy-fying preds
         pred_vertices_mode = pred_vertices_mode.cpu().detach().numpy()
@@ -334,9 +335,9 @@ def evaluate_single_in_multitasknet_ssp3d(model,
                                                image=np.zeros((model_cfg.MODEL.IMAGE_SIZE, model_cfg.MODEL.IMAGE_SIZE, 3)),
                                                unnormalise_img=False,
                                                return_silhouette=True)
-            pred_silhouette_mode = pred_silhouette_mode[None, :, :]  # (1, img_wh, img_wh)
+            pred_silhouette_mode = pred_silhouette_mode[None, :, :, 0].astype(np.float32)  # (1, img_wh, img_wh)
             print(pred_silhouette_mode.shape, target_silhouette.shape, pred_silhouette_mode.dtype, target_silhouette.dtype,
-                  pred_silhouette_mode.max(), target_silhouette.max(), pred_silhouette_mode.min(), target_silhouette.min())
+                  pred_silhouette_mode.unique(), target_silhouette.unique())
             true_positive = np.logical_and(pred_silhouette_mode, target_silhouette)
             false_positive = np.logical_and(pred_silhouette_mode, np.logical_not(target_silhouette))
             true_negative = np.logical_and(np.logical_not(pred_silhouette_mode), np.logical_not(target_silhouette))
