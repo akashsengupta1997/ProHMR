@@ -329,17 +329,17 @@ def evaluate_single_in_multitasknet_ssp3d(model,
             per_frame_metrics['joints2D_l2es'].append(np.mean(joints2D_l2e_batch, axis=-1))  # (1,)
 
         if 'silhouette_ious' in metrics_to_track:
-            _, pred_silhouette = renderer(vertices=pred_vertices_mode[0],
-                                          camera_translation=out['pred_cam_t'][0, 0, :].cpu().detach().numpy(),
-                                          image=np.zeros((model_cfg.MODEL.IMAGE_SIZE, model_cfg.MODEL.IMAGE_SIZE, 3)),
-                                          unnormalise_img=False,
-                                          return_silhouette=True)[None, :, :]   # (1, img_wh, img_wh)
-            print(pred_silhouette.shape, target_silhouette.shape, pred_silhouette.dtype, target_silhouette.dtype,
-                  pred_silhouette.max(), target_silhouette.max(), pred_silhouette.min(), target_silhouette.min())
-            true_positive = np.logical_and(pred_silhouette, target_silhouette)
-            false_positive = np.logical_and(pred_silhouette, np.logical_not(target_silhouette))
-            true_negative = np.logical_and(np.logical_not(pred_silhouette), np.logical_not(target_silhouette))
-            false_negative = np.logical_and(np.logical_not(pred_silhouette), target_silhouette)
+            _, pred_silhouette_mode = renderer(vertices=pred_vertices_mode[0],
+                                               camera_translation=out['pred_cam_t'][0, 0, :].cpu().detach().numpy(),
+                                               image=np.zeros((model_cfg.MODEL.IMAGE_SIZE, model_cfg.MODEL.IMAGE_SIZE, 3)),
+                                               unnormalise_img=False,
+                                               return_silhouette=True)[None, :, :]   # (1, img_wh, img_wh)
+            print(pred_silhouette_mode.shape, target_silhouette.shape, pred_silhouette_mode.dtype, target_silhouette.dtype,
+                  pred_silhouette_mode.max(), target_silhouette.max(), pred_silhouette_mode.min(), target_silhouette.min())
+            true_positive = np.logical_and(pred_silhouette_mode, target_silhouette)
+            false_positive = np.logical_and(pred_silhouette_mode, np.logical_not(target_silhouette))
+            true_negative = np.logical_and(np.logical_not(pred_silhouette_mode), np.logical_not(target_silhouette))
+            false_negative = np.logical_and(np.logical_not(pred_silhouette_mode), target_silhouette)
             num_tp = np.sum(true_positive, axis=(1, 2))  # (1,)
             num_fp = np.sum(false_positive, axis=(1, 2))
             num_tn = np.sum(true_negative, axis=(1, 2))
@@ -498,6 +498,29 @@ def evaluate_single_in_multitasknet_ssp3d(model,
             plt.imshow(reposed_body_vis_rgb_mean_rot)
             subplot_count += 1
 
+            # Plot silhouette+J2D and reposed body render
+            if 'silhouette_ious' in metrics_to_track:
+                plt.subplot(num_row, num_col, subplot_count)
+                plt.gca().axis('off')
+                plt.imshow(pred_silhouette_mode[0].astype(np.int16) - target_silhouette[0].astype(np.int16))
+                plt.text(10, 10, s='mIOU: {:.4f}'.format(per_frame_metrics['silhouette_ious'][0]))
+            if 'joints2D_l2es' in metrics_to_track:
+                plt.scatter(target_joints2D_coco[0, :, 0],
+                            target_joints2D_coco[0, :, 1],
+                            c=target_joints2D_coco_vis[0, :].astype(np.float32), s=10.0)
+                plt.scatter(pred_joints2D_coco_mode[0, :, 0],
+                            pred_joints2D_coco_mode[0, :, 1],
+                            c='r', s=10.0)
+                for j in range(target_joints2D_coco.shape[1]):
+                    plt.text(target_joints2D_coco[0, j, 0],
+                             target_joints2D_coco[0, j, 1],
+                             str(j))
+                    plt.text(pred_joints2D_coco_mode[0, j, 0],
+                             pred_joints2D_coco_mode[0, j, 1],
+                             str(j))
+                plt.text(10, 30, s='J2D L2E: {:.4f}'.format(per_frame_metrics['joints2D_l2es'][0]))
+            subplot_count += 1
+
             if 'pves_sc' in metrics_to_track:
                 # Plot PVE-SC pred vs target comparison
                 plt.subplot(num_row, num_col, subplot_count)
@@ -618,19 +641,6 @@ def evaluate_single_in_multitasknet_ssp3d(model,
                 plt.gca().axis('off')
                 norm = plt.Normalize(vmin=0.0, vmax=0.03, clip=True)
                 plt.scatter(pred_reposed_vertices_sc[0, :, 0],
-                            pred_reposed_vertices_sc[0, :, 1],
-                            s=0.05,
-                            c=pvet_scale_corrected_batch[0],
-                            cmap='jet',
-                            norm=norm)
-                plt.gca().set_aspect('equal', adjustable='box')
-                plt.text(-0.6, -0.9, s='PVE-T-SC: {:.4f}'.format(per_frame_metrics['pve-ts_sc'][batch_num][0]))
-                subplot_count += 1
-
-                plt.subplot(num_row, num_col, subplot_count)
-                plt.gca().axis('off')
-                norm = plt.Normalize(vmin=0.0, vmax=0.03, clip=True)
-                plt.scatter(pred_reposed_vertices_sc[0, :, 2],  # Equivalent to Rotated 90° about y axis
                             pred_reposed_vertices_sc[0, :, 1],
                             s=0.05,
                             c=pvet_scale_corrected_batch[0],
@@ -872,8 +882,8 @@ if __name__ == '__main__':
     metrics.extend(['verts_samples_dist_from_mean', 'joints3D_coco_samples_dist_from_mean', 'joints3D_coco_invis_samples_dist_from_mean'])
     metrics.append('joints2D_l2es')
     metrics.append('joints2Dsamples_l2es')
-    # metrics.append('silhouette_ious')
-    # metrics.append('silhouettesamples_ious')
+    metrics.append('silhouette_ious')
+    metrics.append('silhouettesamples_ious')
 
     save_path = '/scratch/as2562/ProHMR/evaluations/ssp3d_{}_samples'.format(args.num_samples)
     if args.occlude is not None:
