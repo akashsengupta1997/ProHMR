@@ -337,7 +337,7 @@ def evaluate_single_in_multitasknet_ssp3d(model,
                                                return_silhouette=True)
             pred_silhouette_mode = pred_silhouette_mode[None, :, :, 0].astype(np.float32)  # (1, img_wh, img_wh)
             print(pred_silhouette_mode.shape, target_silhouette.shape, pred_silhouette_mode.dtype, target_silhouette.dtype,
-                  np.unique(pred_silhouette_mode), np.unique(target_silhouette.unique))
+                  np.unique(pred_silhouette_mode), np.unique(target_silhouette))
             true_positive = np.logical_and(pred_silhouette_mode, target_silhouette)
             false_positive = np.logical_and(pred_silhouette_mode, np.logical_not(target_silhouette))
             true_negative = np.logical_and(np.logical_not(pred_silhouette_mode), np.logical_not(target_silhouette))
