@@ -90,6 +90,8 @@ def evaluate_single_in_multitasknet_ssp3d(model,
 
     model.eval()
     for batch_num, samples_batch in enumerate(tqdm(eval_dataloader)):
+        if batch_num == 2:
+            break
         # ------------------------------- TARGETS and INPUTS -------------------------------
         input = samples_batch['input'].to(device)
         if occlude == 'bottom':
@@ -801,6 +803,19 @@ def evaluate_single_in_multitasknet_ssp3d(model,
             joints2Dsamples_l2e = metric_sums['joints2Dsamples_l2es'] / metric_sums['num_vis_joints2Dsamples']
             final_metrics[metric_type] = joints2Dsamples_l2e
             print('Check total samples:', metric_type, metric_sums['num_vis_joints2Dsamples'])
+
+        elif metric_type == 'silhouette_ious':
+            iou = metric_sums['num_true_positives'] / \
+                  (metric_sums['num_true_positives'] +
+                   metric_sums['num_false_negatives'] +
+                   metric_sums['num_false_positives'])
+            final_metrics['silhouette_ious'] = iou
+        elif metric_type == 'silhouettesamples_ious':
+            samples_iou = metric_sums['num_samples_true_positives'] / \
+                          (metric_sums['num_samples_true_positives'] +
+                           metric_sums['num_samples_false_negatives'] +
+                           metric_sums['num_samples_false_positives'])
+            final_metrics['silhouettesamples_ious'] = samples_iou
 
         elif metric_type == 'verts_samples_dist_from_mean':
             final_metrics[metric_type] = metric_sums[metric_type] / (metric_sums['num_datapoints'] * num_pred_samples * 6890)
