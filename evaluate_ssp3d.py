@@ -90,8 +90,8 @@ def evaluate_single_in_multitasknet_ssp3d(model,
 
     model.eval()
     for batch_num, samples_batch in enumerate(tqdm(eval_dataloader)):
-        if batch_num == 2:
-            break
+        # if batch_num == 2:
+        #     break
         # ------------------------------- TARGETS and INPUTS -------------------------------
         input = samples_batch['input'].to(device)
         if occlude == 'bottom':
