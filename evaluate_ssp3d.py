@@ -336,8 +336,6 @@ def evaluate_single_in_multitasknet_ssp3d(model,
                                                unnormalise_img=False,
                                                return_silhouette=True)
             pred_silhouette_mode = pred_silhouette_mode[None, :, :, 0].astype(np.float32)  # (1, img_wh, img_wh)
-            print(pred_silhouette_mode.shape, target_silhouette.shape, pred_silhouette_mode.dtype, target_silhouette.dtype,
-                  np.unique(pred_silhouette_mode), np.unique(target_silhouette))
             true_positive = np.logical_and(pred_silhouette_mode, target_silhouette)
             false_positive = np.logical_and(pred_silhouette_mode, np.logical_not(target_silhouette))
             true_negative = np.logical_and(np.logical_not(pred_silhouette_mode), np.logical_not(target_silhouette))
@@ -367,14 +365,18 @@ def evaluate_single_in_multitasknet_ssp3d(model,
         if 'silhouettesamples_ious' in metrics_to_track:
             pred_silhouette_samples = []
             for i in range(num_pred_samples):
-                pred_silhouette_samples.append(renderer(vertices=pred_vertices_samples[i],
-                                                        camera_translation=out['pred_cam_t'][0, 0, :].cpu().detach().numpy(),
-                                                        image=np.zeros((model_cfg.MODEL.IMAGE_SIZE, model_cfg.MODEL.IMAGE_SIZE, 3)),
-                                                        unnormalise_img=False,
-                                                        return_silhouette=True))
+                _, silh_sample = renderer(vertices=pred_vertices_samples[i],
+                                          camera_translation=out['pred_cam_t'][0, 0, :].cpu().detach().numpy(),
+                                          image=np.zeros((model_cfg.MODEL.IMAGE_SIZE, model_cfg.MODEL.IMAGE_SIZE, 3)),
+                                          unnormalise_img=False,
+                                          return_silhouette=True)
+                pred_silhouette_samples.append(silh_sample[:, :, 0].astype(np.float32))
             pred_silhouette_samples = np.stack(pred_silhouette_samples, axis=0)[None, :, :, :]  # (1, num_samples, img_wh, img_wh)
             target_silhouette_tiled = np.tile(target_silhouette[:, None, :, :], (1, num_pred_samples, 1, 1))  # (1, num_samples, img_wh, img_wh)
-            print('HERE2', pred_silhouette_samples.shape, target_silhouette_tiled.shape)
+            print('HERE2', pred_silhouette_samples.shape, target_silhouette_tiled.shape,
+                  pred_silhouette_samples.dtype, target_silhouette_tiled.dtype,
+                  np.unique(pred_silhouette_samples), np.unique(target_silhouette_tiled))
+            
             true_positive = np.logical_and(pred_silhouette_samples, target_silhouette_tiled)
             false_positive = np.logical_and(pred_silhouette_samples, np.logical_not(target_silhouette_tiled))
             true_negative = np.logical_and(np.logical_not(pred_silhouette_samples), np.logical_not(target_silhouette_tiled))
