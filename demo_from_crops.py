@@ -84,8 +84,8 @@ if not os.path.exists(args.out_folder):
 # Go over each image in the image directory
 img_fnames = sorted([f for f in os.listdir(args.img_folder) if f.endswith('.png') or f.endswith('.jpg')])
 print('Image found:', len(img_fnames))
-for i, fname in enumerate(tqdm(img_fnames)):
 
+for i, fname in enumerate(tqdm(img_fnames)):
     img, norm_img = process_image(os.path.join(args.img_folder, fname), input_res=model_cfg.MODEL.IMAGE_SIZE)
     with torch.no_grad():
         "Need this stuff for actnorm init"
@@ -121,8 +121,7 @@ for i, fname in enumerate(tqdm(img_fnames)):
 
     batch_size = batch['img'].shape[0]
     for n in range(batch_size):
-        img_fn, _ = os.path.splitext(os.path.split(batch['imgname'][n])[1])
         regression_img = renderer(out['pred_vertices'][n, 0].detach().cpu().numpy(),
                                   out['pred_cam_t'][n, 0].detach().cpu().numpy(),
                                   batch['img'][n])
-        cv2.imwrite(os.path.join(args.out_folder, f'{img_fn}_regression.{args.out_format}'), 255*regression_img[:, :, ::-1])
+        cv2.imwrite(os.path.join(args.out_folder, f'{fname}_regression.{args.out_format}'), 255*regression_img[:, :, ::-1])
