@@ -143,7 +143,6 @@ class ImageDataset(Dataset):
         orig_keypoints_2d = self.keypoints_2d[idx].copy()
 
         item['img'] = img_patch
-        print('HERE1', item['img'].shape, item['img'].max(), item['img'].min())
 
         item['keypoints_2d'] = keypoints_2d.astype(np.float32)
         item['keypoints_3d'] = keypoints_3d.astype(np.float32)
