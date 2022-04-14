@@ -370,6 +370,7 @@ def get_example(img_path: str, center_x: float, center_y: float,
         print('HERE0', img_patch.shape, img_patch.max(), img_patch.min())
         if mean is not None and std is not None:
             img_patch[n_c, :, :] = (img_patch[n_c, :, :] - mean[n_c]) / std[n_c]
+            print('HERE0', img_patch.shape, img_patch.max(), img_patch.min())
     if do_flip:
         keypoints_2d = fliplr_keypoints(keypoints_2d, img_width, flip_kp_permutation)
 
