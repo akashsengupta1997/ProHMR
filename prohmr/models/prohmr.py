@@ -101,7 +101,6 @@ class ProHMR(pl.LightningModule):
 
         # Use RGB image as input
         x = batch['img']
-        print('HERE2', batch['img'].shape, batch['img'].max(), batch['img'].min())
         batch_size = x.shape[0]
 
         # Compute keypoint features using the backbone

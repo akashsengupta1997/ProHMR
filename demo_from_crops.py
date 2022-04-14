@@ -124,4 +124,5 @@ for i, fname in enumerate(tqdm(img_fnames)):
         regression_img = renderer(out['pred_vertices'][n, 0].detach().cpu().numpy(),
                                   out['pred_cam_t'][n, 0].detach().cpu().numpy(),
                                   batch['img'][n])
-        cv2.imwrite(os.path.join(args.out_folder, f'{fname}_regression.{args.out_format}'), 255*regression_img[:, :, ::-1])
+        cv2.imwrite(os.path.join(args.out_folder, f'{os.path.splitext(fname)[0]}_regression.{args.out_format}'),
+                    255*regression_img[:, :, ::-1])
