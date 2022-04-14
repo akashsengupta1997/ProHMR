@@ -82,8 +82,8 @@ if not os.path.exists(args.out_folder):
     os.makedirs(args.out_folder)
 
 # Go over each image in the image directory
-img_fnames = sorted([f for f in args.img_folder if f.endswith('.png') or f.endswith('.jpg')])
-print('Image found:', len(img_fnames), args.img_folder)
+img_fnames = sorted([f for f in os.listdir(args.img_folder) if f.endswith('.png') or f.endswith('.jpg')])
+print('Image found:', len(img_fnames))
 for i, fname in enumerate(tqdm(img_fnames)):
 
     img, norm_img = process_image(os.path.join(args.img_folder, fname), input_res=model_cfg.MODEL.IMAGE_SIZE)
