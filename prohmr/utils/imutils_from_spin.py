@@ -6,8 +6,6 @@ import numpy as np
 import scipy.misc
 import cv2
 
-import constants
-
 def get_transform(center, scale, res, rot=0):
     """Generate transformation matrix."""
     h = 200 * scale
@@ -125,26 +123,6 @@ def flip_img(img):
     img = np.fliplr(img)
     return img
 
-def flip_kp(kp):
-    """Flip keypoints."""
-    if len(kp) == 24:
-        flipped_parts = constants.J24_FLIP_PERM
-    elif len(kp) == 49:
-        flipped_parts = constants.J49_FLIP_PERM
-    kp = kp[flipped_parts]
-    kp[:,0] = - kp[:,0]
-    return kp
-
-def flip_pose(pose):
-    """Flip pose.
-    The flipping is based on SMPL parameters.
-    """
-    flipped_parts = constants.SMPL_POSE_FLIP_PERM
-    pose = pose[flipped_parts]
-    # we also negate the second and the third dimension of the axis-angle
-    pose[1::3] = -pose[1::3]
-    pose[2::3] = -pose[2::3]
-    return pose
 
 def convert_bbox_centre_hw_to_corners(centre, height, width):
     x1 = centre[0] - height/2.0
