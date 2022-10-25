@@ -15,7 +15,7 @@ from prohmr.datasets.pw3d_eval_dataset import PW3DEvalDataset
 from prohmr.configs import get_config, prohmr_config
 from prohmr.models import ProHMR
 from prohmr.models.smpl_mine import SMPL
-from prohmr.utils.pose_utils import compute_similarity_transform_batch_numpy, scale_and_translation_transform_batch
+from prohmr.utils.pose_utils import compute_similarity_transform_batch_numpy, scale_and_translation_transform_batch, check_joints2d_visibility_torch
 from prohmr.utils.geometry import undo_keypoint_normalisation, orthographic_project_torch, convert_weak_perspective_to_camera_translation
 from prohmr.utils.renderer import Renderer
 from prohmr.utils.sampling_utils import compute_vertex_uncertainties_from_samples
@@ -34,7 +34,8 @@ def evaluate_3dpw(model,
                   pin_memory=True,
                   vis_every_n_batches=1000,
                   num_samples_to_visualise=10,
-                  save_per_frame_uncertainty=True):
+                  save_per_frame_uncertainty=True,
+                  extreme_crop=False):
 
     eval_dataloader = DataLoader(eval_dataset,
                                  batch_size=1,
@@ -56,11 +57,20 @@ def evaluate_3dpw(model,
         if metric == 'joints3D_coco_invis_samples_dist_from_mean':
             metric_sums['num_invis_joints3Dsamples'] = 0
 
+        if metric == 'joints3D_coco_vis_samples_dist_from_mean':
+            metric_sums['num_vis_joints3Dsamples'] = 0
+
         elif metric == 'hrnet_joints2D_l2es':
             metric_sums['num_vis_hrnet_joints2D'] = 0
 
         elif metric == 'hrnet_joints2Dsamples_l2es':
             metric_sums['num_vis_hrnet_joints2Dsamples'] = 0
+
+        elif metric == 'joints2D_l2es':
+            metric_sums['num_vis_joints2D'] = 0
+
+        elif metric == 'joints2Dsamples_l2es':
+            metric_sums['num_vis_joints2Dsamples'] = 0
 
     fname_per_frame = []
     pose_per_frame = []
@@ -70,8 +80,11 @@ def evaluate_3dpw(model,
         vertices_uncertainty_per_frame = []
 
     renderer = Renderer(model_cfg, faces=model.smpl.faces)
-    reposed_cam_wp = np.array([0.85, 0., -0.2])
-    reposed_cam_t = convert_weak_perspective_to_camera_translation(cam_wp=reposed_cam_wp,
+    reposed_cam_t = convert_weak_perspective_to_camera_translation(cam_wp=np.array([0.85, 0., -0.2]),
+                                                                   focal_length=model_cfg.EXTRA.FOCAL_LENGTH,
+                                                                   resolution=model_cfg.MODEL.IMAGE_SIZE)
+    if extreme_crop:
+        rot_cam_t = convert_weak_perspective_to_camera_translation(cam_wp=np.array([0.85, 0., 0.]),
                                                                    focal_length=model_cfg.EXTRA.FOCAL_LENGTH,
                                                                    resolution=model_cfg.MODEL.IMAGE_SIZE)
 
@@ -84,8 +97,16 @@ def evaluate_3dpw(model,
         target_pose = samples_batch['pose'].to(device)
         target_shape = samples_batch['shape'].to(device)
         target_gender = samples_batch['gender'][0]
-        hrnet_joints2D_coco = samples_batch['hrnet_kps'].cpu().detach().numpy()
-        hrnet_joints2D_coco_vis = samples_batch['hrnet_kps_vis'].cpu().detach().numpy()
+        hrnet_joints2D_coco = samples_batch['hrnet_kps']
+        hrnet_joints2D_vis_coco = samples_batch['hrnet_kps_vis']
+        hrnet_joints2D_vis_coco = check_joints2d_visibility_torch(hrnet_joints2D_coco,
+                                                                  input.shape[-1],
+                                                                  vis=hrnet_joints2D_vis_coco)  # (batch_size, 17)
+        target_joints2D_coco = samples_batch['joints2D_coco']
+        target_joints2D_vis_coco = samples_batch['joints2D_coco_vis']
+        target_joints2D_vis_coco = check_joints2d_visibility_torch(target_joints2D_coco,
+                                                                   input.shape[-1],
+                                                                   vis=target_joints2D_vis_coco)  # (batch_size, 17)
         fname = samples_batch['fname']
 
         if target_gender == 'm':
@@ -171,6 +192,10 @@ def evaluate_3dpw(model,
         target_vertices = target_vertices.cpu().detach().numpy()
         target_joints_h36mlsp = target_joints_h36mlsp.cpu().detach().numpy()
         target_reposed_vertices = target_reposed_vertices.cpu().detach().numpy()
+        hrnet_joints2D_coco = hrnet_joints2D_coco.cpu().detach().numpy()
+        hrnet_joints2D_vis_coco = hrnet_joints2D_vis_coco.cpu().detach().numpy()
+        target_joints2D_coco = target_joints2D_coco.cpu().detach().numpy()
+        target_joints2D_vis_coco = target_joints2D_vis_coco.cpu().detach().numpy()
 
         # Numpy-fying preds
         pred_vertices_mode = pred_vertices_mode.cpu().detach().numpy()
@@ -341,10 +366,10 @@ def evaluate_3dpw(model,
 
         if 'joints3D_coco_invis_samples_dist_from_mean' in metrics_to_track:
             # (In)visibility of specific joints determined by HRNet 2D joint predictions and confidence scores.
-            hrnet_joints2D_coco_invis = np.logical_not(hrnet_joints2D_coco_vis[0])  # (17,)
+            hrnet_joints2D_invis_coco = np.logical_not(hrnet_joints2D_vis_coco[0])  # (17,)
 
-            if np.any(hrnet_joints2D_coco_invis):
-                joints3D_coco_invis_samples = pred_joints_coco_samples[:, hrnet_joints2D_coco_invis, :]  # (num samples, num invis joints, 3)
+            if np.any(hrnet_joints2D_invis_coco):
+                joints3D_coco_invis_samples = pred_joints_coco_samples[:, hrnet_joints2D_invis_coco, :]  # (num samples, num invis joints, 3)
                 joints3D_coco_invis_samples_mean = joints3D_coco_invis_samples.mean(axis=0)  # (num_invis_joints, 3)
                 joints3D_coco_invis_samples_dist_from_mean = np.linalg.norm(joints3D_coco_invis_samples - joints3D_coco_invis_samples_mean,
                                                                             axis=-1)  # (num samples, num_invis_joints)
@@ -355,26 +380,55 @@ def evaluate_3dpw(model,
             else:
                 per_frame_metrics['joints3D_coco_invis_samples_dist_from_mean'].append(np.zeros(1))
 
+        if 'joints3D_coco_vis_samples_dist_from_mean' in metrics_to_track:
+            # Visibility of specific joints determined by HRNet 2D joint predictions and confidence scores.
+            joints3D_coco_vis_samples = pred_joints_coco_samples[:, hrnet_joints2D_vis_coco[0], :]  # (num samples, num vis joints, 3)
+            joints3D_coco_vis_samples_mean = joints3D_coco_vis_samples.mean(axis=0)  # (num_vis_joints, 3)
+            joints3D_coco_vis_samples_dist_from_mean = np.linalg.norm(joints3D_coco_vis_samples - joints3D_coco_vis_samples_mean,
+                                                                      axis=-1)  # (num samples, num_vis_joints)
+
+            metric_sums['joints3D_coco_vis_samples_dist_from_mean'] += joints3D_coco_vis_samples_dist_from_mean.sum()  # scalar
+            metric_sums['num_vis_joints3Dsamples'] += np.prod(joints3D_coco_vis_samples_dist_from_mean.shape)
+            per_frame_metrics['joints3D_coco_vis_samples_dist_from_mean'].append(joints3D_coco_vis_samples_dist_from_mean.mean()[None])  # (1,)
+
         # -------------------------------- 2D Metrics ---------------------------
         # Using JRNet 2D joints as target, rather than GT
         if 'hrnet_joints2D_l2es' in metrics_to_track:
-            hrnet_joints2D_l2e_batch = np.linalg.norm(pred_joints2D_coco_mode[:, hrnet_joints2D_coco_vis[0], :] - hrnet_joints2D_coco[:, hrnet_joints2D_coco_vis[0], :],
+            hrnet_joints2D_l2e_batch = np.linalg.norm(pred_joints2D_coco_mode[:, hrnet_joints2D_vis_coco[0], :] - hrnet_joints2D_coco[:, hrnet_joints2D_vis_coco[0], :],
                                                       axis=-1)  # (1, num vis joints)
-            assert hrnet_joints2D_l2e_batch.shape[1] == hrnet_joints2D_coco_vis.sum()
+            assert hrnet_joints2D_l2e_batch.shape[1] == hrnet_joints2D_vis_coco.sum()
 
             metric_sums['hrnet_joints2D_l2es'] += np.sum(hrnet_joints2D_l2e_batch)  # scalar
             metric_sums['num_vis_hrnet_joints2D'] += hrnet_joints2D_l2e_batch.shape[1]
             per_frame_metrics['hrnet_joints2D_l2es'].append(np.mean(hrnet_joints2D_l2e_batch, axis=-1))  # (1,)
 
+        if 'joints2D_l2es' in metrics_to_track:
+            joints2D_l2e_batch = np.linalg.norm(pred_joints2D_coco_mode[:, target_joints2D_vis_coco[0], :] - target_joints2D_coco[:, target_joints2D_vis_coco[0], :],
+                                                axis=-1)  # (1, num vis joints)
+            assert joints2D_l2e_batch.shape[1] == target_joints2D_vis_coco.sum()
+
+            metric_sums['joints2D_l2es'] += np.sum(joints2D_l2e_batch)  # scalar
+            metric_sums['num_vis_joints2D'] += joints2D_l2e_batch.shape[1]
+            per_frame_metrics['joints2D_l2es'].append(np.mean(joints2D_l2e_batch, axis=-1))  # (1,)
+
         # -------------------------------- 2D Metrics after Averaging over Samples ---------------------------
         if 'hrnet_joints2Dsamples_l2es' in metrics_to_track:
-            hrnet_joints2Dsamples_l2e_batch = np.linalg.norm(pred_joints2D_coco_samples[:, hrnet_joints2D_coco_vis[0], :] - hrnet_joints2D_coco[:, hrnet_joints2D_coco_vis[0], :],
+            hrnet_joints2Dsamples_l2e_batch = np.linalg.norm(pred_joints2D_coco_samples[:, hrnet_joints2D_vis_coco[0], :] - hrnet_joints2D_coco[:, hrnet_joints2D_vis_coco[0], :],
                                                              axis=-1)  # (num_samples, num vis joints)
-            assert hrnet_joints2Dsamples_l2e_batch.shape[1] == hrnet_joints2D_coco_vis.sum()
+            assert hrnet_joints2Dsamples_l2e_batch.shape[1] == hrnet_joints2D_vis_coco.sum()
 
             metric_sums['hrnet_joints2Dsamples_l2es'] += np.sum(hrnet_joints2Dsamples_l2e_batch)  # scalar
             metric_sums['num_vis_hrnet_joints2Dsamples'] += np.prod(hrnet_joints2Dsamples_l2e_batch.shape)
             per_frame_metrics['hrnet_joints2Dsamples_l2es'].append(np.mean(hrnet_joints2Dsamples_l2e_batch)[None])  # (1,)
+
+        if 'joints2Dsamples_l2es' in metrics_to_track:
+            joints2Dsamples_l2e_batch = np.linalg.norm(pred_joints2D_coco_samples[:, target_joints2D_vis_coco[0], :] - target_joints2D_coco[:, target_joints2D_vis_coco[0], :],
+                                                       axis=-1)  # (num_samples, num vis joints)
+            assert joints2Dsamples_l2e_batch.shape[1] == target_joints2D_vis_coco.sum()
+
+            metric_sums['joints2Dsamples_l2es'] += np.sum(joints2Dsamples_l2e_batch)  # scalar
+            metric_sums['num_vis_joints2Dsamples'] += np.prod(joints2Dsamples_l2e_batch.shape)
+            per_frame_metrics['joints2Dsamples_l2es'].append(np.mean(joints2Dsamples_l2e_batch)[None])  # (1,)
 
         metric_sums['num_datapoints'] += target_pose.shape[0]
 
@@ -406,7 +460,7 @@ def evaluate_3dpw(model,
                                          image=vis_img[0],
                                          unnormalise_img=False)
             body_vis_rgb_mode_rot = renderer(vertices=pred_vertices_mode[0],
-                                             camera_translation=pred_cam_t.copy(),
+                                             camera_translation=pred_cam_t.copy() if not extreme_crop else rot_cam_t.copy(),
                                              image=np.zeros_like(vis_img[0]),
                                              unnormalise_img=False,
                                              angle=np.pi/2.,
@@ -433,7 +487,7 @@ def evaluate_3dpw(model,
                                                      image=vis_img[0],
                                                      unnormalise_img=False))
                 body_vis_rgb_rot_samples.append(renderer(vertices=pred_vertices_samples[i],
-                                                         camera_translation=pred_cam_t.copy(),
+                                                         camera_translation=pred_cam_t.copy() if not extreme_crop else rot_cam_t.copy(),
                                                          image=np.zeros_like(vis_img[0]),
                                                          unnormalise_img=False,
                                                          angle=np.pi / 2.,
@@ -456,12 +510,28 @@ def evaluate_3dpw(model,
             subplot_count += 1
 
             # Plot pred vertices 2D and body render overlaid over input
+            # also add target joints 2D scatter
             plt.subplot(num_row, num_col, subplot_count)
             plt.gca().axis('off')
             plt.imshow(vis_img[0])
             plt.scatter(pred_vertices2D_mode[0, :, 0],
                         pred_vertices2D_mode[0, :, 1],
                         c='r', s=0.01)
+            if 'joints2D_l2es' in metrics_to_track:
+                plt.scatter(pred_joints2D_coco_mode[0, :, 0],
+                            pred_joints2D_coco_mode[0, :, 1],
+                            c='r', s=10.0)
+                for j in range(target_joints2D_coco.shape[1]):
+                    if target_joints2D_vis_coco[0][j]:
+                        plt.scatter(target_joints2D_coco[0, j, 0],
+                                    target_joints2D_coco[0, j, 1],
+                                    c='blue', s=10.0)
+                        plt.text(target_joints2D_coco[0, j, 0],
+                                 target_joints2D_coco[0, j, 1],
+                                 str(j))
+                    plt.text(pred_joints2D_coco_mode[0, j, 0],
+                             pred_joints2D_coco_mode[0, j, 1],
+                             str(j))
             subplot_count += 1
 
             # Plot body render overlaid on vis image
@@ -778,15 +848,31 @@ def evaluate_3dpw(model,
             final_metrics[metric_type] = joints2Dsamples_l2e
             print('Check total samples:', metric_type, metric_sums['num_vis_hrnet_joints2Dsamples'])
 
+        elif metric_type == 'joints2D_l2es':
+            joints2D_l2e = metric_sums['joints2D_l2es'] / metric_sums['num_vis_joints2D']
+            final_metrics[metric_type] = joints2D_l2e
+            print('Check total samples:', metric_type, metric_sums['num_vis_joints2D'])
+        elif metric_type == 'joints2D_l2es_best_j2d_sample':
+            joints2D_l2e_best_j2d_sample = metric_sums['joints2D_l2es_best_j2d_sample'] / metric_sums['num_vis_joints2D']
+            final_metrics[metric_type] = joints2D_l2e_best_j2d_sample
+        elif metric_type == 'joints2Dsamples_l2es':
+            joints2Dsamples_l2e = metric_sums['joints2Dsamples_l2es'] / metric_sums['num_vis_joints2Dsamples']
+            final_metrics[metric_type] = joints2Dsamples_l2e
+            print('Check total samples:', metric_type, metric_sums['num_vis_joints2Dsamples'])
+
         elif metric_type == 'verts_samples_dist_from_mean':
             final_metrics[metric_type] = metric_sums[metric_type] / (metric_sums['num_datapoints'] * num_pred_samples * 6890)
         elif metric_type == 'joints3D_coco_samples_dist_from_mean':
             final_metrics[metric_type] = metric_sums[metric_type] / (metric_sums['num_datapoints'] * num_pred_samples * 17)
         elif metric_type == 'joints3D_coco_invis_samples_dist_from_mean':
             if metric_sums['num_invis_joints3Dsamples'] > 0:
+                print('Check total samples:', metric_type, metric_sums['num_invis_joints3Dsamples'])
                 final_metrics[metric_type] = metric_sums[metric_type] / metric_sums['num_invis_joints3Dsamples']
             else:
                 print('No invisible 3D COCO joints!')
+        elif metric_type == 'joints3D_coco_vis_samples_dist_from_mean':
+            print('Check total samples:', metric_type, metric_sums['num_vis_joints3Dsamples'])
+            final_metrics[metric_type] = metric_sums[metric_type] / metric_sums['num_vis_joints3Dsamples']
 
         else:
             if 'pves' in metric_type:
@@ -818,6 +904,8 @@ if __name__ == '__main__':
     parser.add_argument('--gpu', default='0', type=str, help='GPU')
     parser.add_argument('--num_samples', '-N', type=int, default=25, help='Number of test samples to evaluate with')
     parser.add_argument('--use_subset', '-S',action='store_true')
+    parser.add_argument('--extreme_crop', '-C', action='store_true')
+    parser.add_argument('--extreme_crop_scale', '-CS', type=float, default=0.5)
 
     args = parser.parse_args()
 
@@ -855,15 +943,21 @@ if __name__ == '__main__':
     dataset = PW3DEvalDataset(dataset_path,
                               img_wh=model_cfg.MODEL.IMAGE_SIZE,
                               selected_fnames=selected_fnames,
-                              visible_joints_threshold=vis_joints_threshold)
+                              visible_joints_threshold=vis_joints_threshold,
+                              gt_visible_joints_threhshold=0.6,
+                              extreme_crop=args.extreme_crop,
+                              extreme_crop_scale=args.extreme_crop_scale)
     print("Eval examples found:", len(dataset))
 
     # Metrics
     metrics = ['pves', 'pves_sc', 'pves_pa', 'pve-ts', 'pve-ts_sc', 'mpjpes', 'mpjpes_sc', 'mpjpes_pa']
-    metrics.extend([metric + '_samples_min' for metric in metrics ])
-    metrics.extend(['verts_samples_dist_from_mean', 'joints3D_coco_samples_dist_from_mean', 'joints3D_coco_invis_samples_dist_from_mean'])
+    metrics.extend([metric + '_samples_min' for metric in metrics])
+    metrics.extend(['verts_samples_dist_from_mean', 'joints3D_coco_samples_dist_from_mean',
+                    'joints3D_coco_invis_samples_dist_from_mean', 'joints3D_coco_vis_samples_dist_from_mean'])
     metrics.append('hrnet_joints2D_l2es')
     metrics.append('hrnet_joints2Dsamples_l2es')
+    metrics.append('joints2D_l2es')
+    metrics.append('joints2Dsamples_l2es')
 
     save_path = '/scratch/as2562/ProHMR/evaluations/3dpw_{}_samples'.format(args.num_samples)
     if args.use_subset:
@@ -884,4 +978,5 @@ if __name__ == '__main__':
                   pin_memory=True,
                   vis_every_n_batches=vis_every_n_batches,
                   num_samples_to_visualise=10,
-                  save_per_frame_uncertainty=True)
+                  save_per_frame_uncertainty=True,
+                  extreme_crop=args.extreme_crop)
