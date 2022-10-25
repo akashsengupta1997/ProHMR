@@ -962,6 +962,8 @@ if __name__ == '__main__':
     save_path = '/scratch/as2562/ProHMR/evaluations/3dpw_{}_samples'.format(args.num_samples)
     if args.use_subset:
         save_path += '_selected_fnames_occluded_joints'
+    if args.extreme_crop:
+        save_path += '_extreme_crop_scale_{}'.format(args.extreme_crop_scale)
     if not os.path.exists(save_path):
         os.makedirs(save_path)
     print("Saving to:", save_path)
