@@ -13,6 +13,7 @@ class PW3DEvalDataset(Dataset):
     def __init__(self,
                  pw3d_dir_path,
                  img_wh=224,
+                 vis_img_wh=512,
                  visible_joints_threshold=0.6,
                  gt_visible_joints_threhshold=0.6,
                  selected_fnames=None,
@@ -45,6 +46,7 @@ class PW3DEvalDataset(Dataset):
             self.joints2D_coco = self.joints2D_coco[chosen_indices]
 
         self.img_wh = img_wh
+        self.vis_img_wh = vis_img_wh
         self.visible_joints_threshold = visible_joints_threshold
         self.gt_visible_joints_threhshold = gt_visible_joints_threhshold
         self.normalize_img = Normalize(mean=[0.485, 0.456, 0.406],
@@ -69,10 +71,11 @@ class PW3DEvalDataset(Dataset):
         fname = self.frame_fnames[index]
         frame_path = os.path.join(self.cropped_frames_dir, fname)
 
-        img = cv2.cvtColor(cv2.imread(frame_path), cv2.COLOR_BGR2RGB)
-        orig_width, orig_height = img.shape[:2]
-        img = cv2.resize(img, (self.img_wh, self.img_wh), interpolation=cv2.INTER_LINEAR)
-        img = np.transpose(img, [2, 0, 1])/255.0
+        orig_img = cv2.cvtColor(cv2.imread(frame_path), cv2.COLOR_BGR2RGB)
+        orig_height, orig_width = orig_img.shape[:2]
+        img = cv2.resize(orig_img, (self.img_wh, self.img_wh), interpolation=cv2.INTER_LINEAR)
+        img = np.transpose(img, [2, 0, 1]) / 255.0
+        vis_img = cv2.resize(orig_img, (self.vis_img_wh, self.vis_img_wh), interpolation=cv2.INTER_LINEAR) / 255.0
 
         if self.extreme_crop:
             img = batch_crop_opencv_affine(output_wh=(self.img_wh, self.img_wh),
@@ -124,7 +127,7 @@ class PW3DEvalDataset(Dataset):
         input = self.normalize_img(img)
 
         return {'input': input,
-                'vis_img': img,
+                'vis_img': vis_img,
                 'pose': pose,
                 'shape': shape,
                 'hrnet_kps': hrnet_kps,

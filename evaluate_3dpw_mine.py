@@ -32,6 +32,7 @@ def evaluate_3dpw(model,
                   num_pred_samples,
                   num_workers=4,
                   pin_memory=True,
+                  vis_img_wh=512,
                   vis_every_n_batches=1000,
                   num_samples_to_visualise=10,
                   save_per_frame_uncertainty=True,
@@ -82,11 +83,11 @@ def evaluate_3dpw(model,
     renderer = Renderer(model_cfg, faces=model.smpl.faces)
     reposed_cam_t = convert_weak_perspective_to_camera_translation(cam_wp=np.array([0.85, 0., -0.2]),
                                                                    focal_length=model_cfg.EXTRA.FOCAL_LENGTH,
-                                                                   resolution=model_cfg.MODEL.IMAGE_SIZE)
+                                                                   resolution=vis_img_wh)
     if extreme_crop:
         rot_cam_t = convert_weak_perspective_to_camera_translation(cam_wp=np.array([0.85, 0., 0.]),
                                                                    focal_length=model_cfg.EXTRA.FOCAL_LENGTH,
-                                                                   resolution=model_cfg.MODEL.IMAGE_SIZE)
+                                                                   resolution=vis_img_wh)
 
     model.eval()
     for batch_num, samples_batch in enumerate(tqdm(eval_dataloader)):
@@ -442,7 +443,8 @@ def evaluate_3dpw(model,
         # ------------------------------- VISUALISE -------------------------------
         if vis_every_n_batches is not None and batch_num % vis_every_n_batches == 0:
             vis_img = samples_batch['vis_img'].numpy()
-            vis_img = np.transpose(vis_img, [0, 2, 3, 1])
+            print('HERE', vis_img.shape)
+            # vis_img = np.transpose(vis_img, [0, 2, 3, 1])
 
             pred_cam_t = out['pred_cam_t'][0, 0, :].cpu().detach().numpy()
 
@@ -946,7 +948,8 @@ if __name__ == '__main__':
                               visible_joints_threshold=vis_joints_threshold,
                               gt_visible_joints_threhshold=0.6,
                               extreme_crop=args.extreme_crop,
-                              extreme_crop_scale=args.extreme_crop_scale)
+                              extreme_crop_scale=args.extreme_crop_scale,
+                              vis_img_wh=512)
     print("Eval examples found:", len(dataset))
 
     # Metrics
@@ -979,6 +982,7 @@ if __name__ == '__main__':
                   num_workers=4,
                   pin_memory=True,
                   vis_every_n_batches=vis_every_n_batches,
+                  vis_img_wh=512,
                   num_samples_to_visualise=10,
                   save_per_frame_uncertainty=True,
                   extreme_crop=args.extreme_crop)
