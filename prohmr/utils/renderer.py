@@ -42,7 +42,7 @@ def create_raymond_lights() -> List[pyrender.Node]:
 
 class Renderer:
 
-    def __init__(self, cfg: CfgNode, faces: np.array):
+    def __init__(self, cfg: CfgNode, faces: np.array, img_res=None):
         """
         Wrapper around the pyrender renderer to render SMPL meshes.
         Args:
@@ -51,7 +51,10 @@ class Renderer:
         """
         self.cfg = cfg
         self.focal_length = cfg.EXTRA.FOCAL_LENGTH
-        self.img_res = cfg.MODEL.IMAGE_SIZE
+        if img_res is None:
+            self.img_res = cfg.MODEL.IMAGE_SIZE
+        else:
+            self.img_res = img_res
         self.renderer = pyrender.OffscreenRenderer(viewport_width=self.img_res,
                                                    viewport_height=self.img_res,
                                                    point_size=1.0)

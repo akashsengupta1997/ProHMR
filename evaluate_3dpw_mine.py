@@ -80,7 +80,7 @@ def evaluate_3dpw(model,
     if save_per_frame_uncertainty:
         vertices_uncertainty_per_frame = []
 
-    renderer = Renderer(model_cfg, faces=model.smpl.faces)
+    renderer = Renderer(model_cfg, faces=model.smpl.faces, img_res=vis_img_wh)
     reposed_cam_t = convert_weak_perspective_to_camera_translation(cam_wp=np.array([0.85, 0., -0.2]),
                                                                    focal_length=model_cfg.EXTRA.FOCAL_LENGTH,
                                                                    resolution=vis_img_wh)
@@ -443,8 +443,6 @@ def evaluate_3dpw(model,
         # ------------------------------- VISUALISE -------------------------------
         if vis_every_n_batches is not None and batch_num % vis_every_n_batches == 0:
             vis_img = samples_batch['vis_img'].numpy()
-            print('HERE', vis_img.shape)
-            # vis_img = np.transpose(vis_img, [0, 2, 3, 1])
 
             pred_cam_t = out['pred_cam_t'][0, 0, :].cpu().detach().numpy()
 
