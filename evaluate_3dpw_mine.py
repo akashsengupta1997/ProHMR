@@ -167,9 +167,9 @@ def evaluate_3dpw(model,
 
         pred_vertices2D_mode_for_vis = orthographic_project_torch(pred_vertices_mode, pred_cam_wp, scale_first=False)
         pred_vertices2D_mode_for_vis = undo_keypoint_normalisation(pred_vertices2D_mode_for_vis, vis_img_wh)
-        pred_joints2D_coco_mode = orthographic_project_torch(pred_joints_coco_mode, pred_cam_wp)  # (1, 17, 2)
-        pred_joints2D_coco_mode = undo_keypoint_normalisation(pred_joints2D_coco_mode, input.shape[-1])
-        pred_joints2D_coco_mode_for_vis = undo_keypoint_normalisation(pred_joints2D_coco_mode, vis_img_wh)
+        pred_joints2D_coco_mode_normed = orthographic_project_torch(pred_joints_coco_mode, pred_cam_wp)  # (1, 17, 2)
+        pred_joints2D_coco_mode = undo_keypoint_normalisation(pred_joints2D_coco_mode_normed, input.shape[-1])
+        pred_joints2D_coco_mode_for_vis = undo_keypoint_normalisation(pred_joints2D_coco_mode_normed, vis_img_wh)
 
         pred_reposed_vertices_mean = smpl_neutral(betas=pred_shape_mode).vertices  # (1, 6890, 3)
 
