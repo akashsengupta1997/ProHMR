@@ -60,6 +60,8 @@ class Renderer:
                                                    point_size=1.0)
 
         self.camera_center = [self.img_res // 2, self.img_res // 2]
+        print('HERE2', self.img_res, self.camera_center)
+
         self.faces = faces
 
     def __call__(self,
