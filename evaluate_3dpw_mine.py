@@ -444,7 +444,11 @@ def evaluate_3dpw(model,
         if vis_every_n_batches is not None and batch_num % vis_every_n_batches == 0:
             vis_img = samples_batch['vis_img'].numpy()
 
-            pred_cam_t = out['pred_cam_t'][0, 0, :].cpu().detach().numpy()
+            # pred_cam_t = out['pred_cam_t'][0, 0, :].cpu().detach().numpy()
+            pred_cam_t = torch.stack([pred_cam_wp[0, 1],
+                                      pred_cam_wp[0, 2],
+                                      2 * model_cfg.EXTRA.FOCAL_LENGTH / (vis_img_wh * pred_cam_wp[0, 0] + 1e-9)], dim=-1)
+            print(pred_cam_t)
 
             # Uncertainty Computation
             # Uncertainty computed by sampling + average distance from mean
