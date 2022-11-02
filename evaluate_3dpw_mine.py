@@ -409,6 +409,7 @@ def evaluate_3dpw(model,
         if 'joints2D_l2es' in metrics_to_track:
             joints2D_l2e_batch = np.linalg.norm(pred_joints2D_coco_mode[:, target_joints2D_vis_coco[0], :] - target_joints2D_coco[:, target_joints2D_vis_coco[0], :],
                                                 axis=-1)  # (1, num vis joints)
+            print(hrnet_joints2D_l2e_batch, joints2D_l2e_batch)
             assert joints2D_l2e_batch.shape[1] == target_joints2D_vis_coco.sum()
 
             metric_sums['joints2D_l2es'] += np.sum(joints2D_l2e_batch)  # scalar
