@@ -197,7 +197,6 @@ def evaluate_3dpw(model,
         hrnet_joints2D_coco = hrnet_joints2D_coco.cpu().detach().numpy()
         hrnet_joints2D_vis_coco = hrnet_joints2D_vis_coco.cpu().detach().numpy()
         target_joints2D_coco = target_joints2D_coco.cpu().detach().numpy()
-        target_joints2D_coco = target_joints2D_coco * (vis_img_wh / input.shape[-1])
         target_joints2D_vis_coco = target_joints2D_vis_coco.cpu().detach().numpy()
 
         # Numpy-fying preds
@@ -409,9 +408,6 @@ def evaluate_3dpw(model,
         if 'joints2D_l2es' in metrics_to_track:
             joints2D_l2e_batch = np.linalg.norm(pred_joints2D_coco_mode[:, target_joints2D_vis_coco[0], :] - target_joints2D_coco[:, target_joints2D_vis_coco[0], :],
                                                 axis=-1)  # (1, num vis joints)
-            print(pred_joints2D_coco_mode)
-            print(hrnet_joints2D_coco)
-            print(target_joints2D_coco)
             assert joints2D_l2e_batch.shape[1] == target_joints2D_vis_coco.sum()
 
             metric_sums['joints2D_l2es'] += np.sum(joints2D_l2e_batch)  # scalar
@@ -520,6 +516,7 @@ def evaluate_3dpw(model,
 
             # Plot pred vertices 2D and body render overlaid over input
             # also add target joints 2D scatter
+            target_joints2D_coco = target_joints2D_coco * (vis_img_wh / input.shape[-1])
             plt.subplot(num_row, num_col, subplot_count)
             plt.gca().axis('off')
             plt.imshow(vis_img[0])
