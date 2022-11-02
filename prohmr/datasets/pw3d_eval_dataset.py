@@ -75,7 +75,6 @@ class PW3DEvalDataset(Dataset):
         orig_height, orig_width = orig_img.shape[:2]
         img = cv2.resize(orig_img, (self.img_wh, self.img_wh), interpolation=cv2.INTER_LINEAR)
         img = np.transpose(img, [2, 0, 1]) / 255.0
-        vis_img = cv2.resize(orig_img, (self.vis_img_wh, self.vis_img_wh), interpolation=cv2.INTER_LINEAR) / 255.0
 
         if self.extreme_crop:
             img = batch_crop_opencv_affine(output_wh=(self.img_wh, self.img_wh),
@@ -84,6 +83,9 @@ class PW3DEvalDataset(Dataset):
                                            bbox_centres=self.extreme_bbox_centre,
                                            bbox_whs=self.extreme_bbox_wh,
                                            orig_scale_factor=1.)['rgb'][0]
+
+        vis_img = cv2.resize(np.transpose(img, [1, 2, 0]),
+                             (self.vis_img_wh, self.vis_img_wh), interpolation=cv2.INTER_LINEAR)
 
         # Targets
         pose = self.pose[index]

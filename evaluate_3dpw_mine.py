@@ -165,10 +165,11 @@ def evaluate_3dpw(model,
         pred_joints_h36mlsp_mode = pred_smpl_output_mode.joints[:, my_config.ALL_JOINTS_TO_H36M_MAP, :][:, my_config.H36M_TO_J14, :]  # (1, 14, 3)
         pred_joints_coco_mode = pred_smpl_output_mode.joints[:, my_config.ALL_JOINTS_TO_COCO_MAP, :]  # (1, 17, 3)
 
-        pred_vertices2D_mode = orthographic_project_torch(pred_vertices_mode, pred_cam_wp, scale_first=False)
-        pred_vertices2D_mode = undo_keypoint_normalisation(pred_vertices2D_mode, input.shape[-1])
+        pred_vertices2D_mode_for_vis = orthographic_project_torch(pred_vertices_mode, pred_cam_wp, scale_first=False)
+        pred_vertices2D_mode_for_vis = undo_keypoint_normalisation(pred_vertices2D_mode_for_vis, vis_img_wh)
         pred_joints2D_coco_mode = orthographic_project_torch(pred_joints_coco_mode, pred_cam_wp)  # (1, 17, 2)
         pred_joints2D_coco_mode = undo_keypoint_normalisation(pred_joints2D_coco_mode, input.shape[-1])
+        pred_joints2D_coco_mode_for_vis = undo_keypoint_normalisation(pred_joints2D_coco_mode, vis_img_wh)
 
         pred_reposed_vertices_mean = smpl_neutral(betas=pred_shape_mode).vertices  # (1, 6890, 3)
 
@@ -196,14 +197,16 @@ def evaluate_3dpw(model,
         hrnet_joints2D_coco = hrnet_joints2D_coco.cpu().detach().numpy()
         hrnet_joints2D_vis_coco = hrnet_joints2D_vis_coco.cpu().detach().numpy()
         target_joints2D_coco = target_joints2D_coco.cpu().detach().numpy()
+        target_joints2D_coco = target_joints2D_coco * (vis_img_wh / input.shape[-1])
         target_joints2D_vis_coco = target_joints2D_vis_coco.cpu().detach().numpy()
 
         # Numpy-fying preds
         pred_vertices_mode = pred_vertices_mode.cpu().detach().numpy()
         pred_joints_h36mlsp_mode = pred_joints_h36mlsp_mode.cpu().detach().numpy()
         pred_joints_coco_mode = pred_joints_coco_mode.cpu().detach().numpy()
-        pred_vertices2D_mode = pred_vertices2D_mode.cpu().detach().numpy()
+        pred_vertices2D_mode_for_vis = pred_vertices2D_mode_for_vis.cpu().detach().numpy()
         pred_joints2D_coco_mode = pred_joints2D_coco_mode.cpu().detach().numpy()
+        pred_joints2D_coco_mode_for_vis = pred_joints2D_coco_mode_for_vis.cpu().detach().numpy()
         pred_reposed_vertices_mean = pred_reposed_vertices_mean.cpu().detach().numpy()
 
         pred_vertices_samples = pred_vertices_samples.cpu().detach().numpy()
@@ -517,12 +520,12 @@ def evaluate_3dpw(model,
             plt.subplot(num_row, num_col, subplot_count)
             plt.gca().axis('off')
             plt.imshow(vis_img[0])
-            plt.scatter(pred_vertices2D_mode[0, :, 0],
-                        pred_vertices2D_mode[0, :, 1],
+            plt.scatter(pred_vertices2D_mode_for_vis[0, :, 0],
+                        pred_vertices2D_mode_for_vis[0, :, 1],
                         c='r', s=0.01)
             if 'joints2D_l2es' in metrics_to_track:
-                plt.scatter(pred_joints2D_coco_mode[0, :, 0],
-                            pred_joints2D_coco_mode[0, :, 1],
+                plt.scatter(pred_joints2D_coco_mode_for_vis[0, :, 0],
+                            pred_joints2D_coco_mode_for_vis[0, :, 1],
                             c='r', s=10.0)
                 for j in range(target_joints2D_coco.shape[1]):
                     if target_joints2D_vis_coco[0][j]:
@@ -532,8 +535,8 @@ def evaluate_3dpw(model,
                         plt.text(target_joints2D_coco[0, j, 0],
                                  target_joints2D_coco[0, j, 1],
                                  str(j))
-                    plt.text(pred_joints2D_coco_mode[0, j, 0],
-                             pred_joints2D_coco_mode[0, j, 1],
+                    plt.text(pred_joints2D_coco_mode_for_vis[0, j, 0],
+                             pred_joints2D_coco_mode_for_vis[0, j, 1],
                              str(j))
             subplot_count += 1
 
