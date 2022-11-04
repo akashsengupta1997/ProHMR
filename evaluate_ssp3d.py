@@ -80,7 +80,7 @@ def evaluate_single_in_multitasknet_ssp3d(model,
     if save_per_frame_uncertainty:
         vertices_uncertainty_per_frame = []
 
-    renderer_for_silh_eval = Renderer(model_cfg, faces=model.smpl.faces)  # TODO need separate renderer for vis and for silhouette eval, with different vis img wh
+    renderer_for_silh_eval = Renderer(model_cfg, faces=model.smpl.faces)
     renderer_for_vis = Renderer(model_cfg, faces=model.smpl.faces, img_res=vis_img_wh)
 
     reposed_cam_t = convert_weak_perspective_to_camera_translation(cam_wp=np.array([0.85, 0., -0.2]),
