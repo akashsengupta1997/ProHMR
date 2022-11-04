@@ -406,7 +406,6 @@ def evaluate_single_in_multitasknet_ssp3d(model,
         # ------------------------------- VISUALISE -------------------------------
         if vis_every_n_batches is not None and batch_num % vis_every_n_batches == 0:
             vis_img = samples_batch['vis_img'].numpy()
-            vis_img = np.transpose(vis_img, [0, 2, 3, 1])
 
             # pred_cam_t = out['pred_cam_t'][0, 0, :].cpu().detach().numpy()
             pred_cam_t = torch.stack([pred_cam_wp[0, 1],
