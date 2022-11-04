@@ -30,6 +30,7 @@ def evaluate_single_in_multitasknet_ssp3d(model,
                                           num_pred_samples,
                                           num_workers=4,
                                           pin_memory=True,
+                                          vis_img_wh=512,
                                           vis_every_n_batches=1,
                                           num_samples_to_visualise=10,
                                           save_per_frame_uncertainty=True,
@@ -79,14 +80,16 @@ def evaluate_single_in_multitasknet_ssp3d(model,
     if save_per_frame_uncertainty:
         vertices_uncertainty_per_frame = []
 
-    renderer = Renderer(model_cfg, faces=model.smpl.faces)
+    renderer_for_silh_eval = Renderer(model_cfg, faces=model.smpl.faces)  # TODO need separate renderer for vis and for silhouette eval, with different vis img wh
+    renderer_for_vis = Renderer(model_cfg, faces=model.smpl.faces, img_res=vis_img_wh)
+
     reposed_cam_t = convert_weak_perspective_to_camera_translation(cam_wp=np.array([0.85, 0., -0.2]),
                                                                    focal_length=model_cfg.EXTRA.FOCAL_LENGTH,
-                                                                   resolution=model_cfg.MODEL.IMAGE_SIZE)
+                                                                   resolution=vis_img_wh)
     if extreme_crop:
         rot_cam_t = convert_weak_perspective_to_camera_translation(cam_wp=np.array([0.85, 0., 0.]),
                                                                    focal_length=model_cfg.EXTRA.FOCAL_LENGTH,
-                                                                   resolution=model_cfg.MODEL.IMAGE_SIZE)
+                                                                   resolution=vis_img_wh)
 
     model.eval()
     for batch_num, samples_batch in enumerate(tqdm(eval_dataloader)):
@@ -161,10 +164,10 @@ def evaluate_single_in_multitasknet_ssp3d(model,
         pred_vertices_mode = pred_smpl_output_mode.vertices  # (1, 6890, 3)
         pred_joints_coco_mode = pred_smpl_output_mode.joints[:, my_config.ALL_JOINTS_TO_COCO_MAP, :]  # (1, 17, 3)
 
-        pred_vertices2D_mode = orthographic_project_torch(pred_vertices_mode, pred_cam_wp, scale_first=False)
-        pred_vertices2D_mode = undo_keypoint_normalisation(pred_vertices2D_mode, input.shape[-1])
-        pred_joints2D_coco_mode = orthographic_project_torch(pred_joints_coco_mode, pred_cam_wp)  # (1, 17, 2)
-        pred_joints2D_coco_mode = undo_keypoint_normalisation(pred_joints2D_coco_mode, input.shape[-1])
+        pred_vertices2D_mode_for_vis = orthographic_project_torch(pred_vertices_mode, pred_cam_wp, scale_first=False)
+        pred_vertices2D_mode_for_vis = undo_keypoint_normalisation(pred_vertices2D_mode_for_vis, vis_img_wh)
+        pred_joints2D_coco_mode_normed = orthographic_project_torch(pred_joints_coco_mode, pred_cam_wp)  # (1, 17, 2)
+        pred_joints2D_coco_mode = undo_keypoint_normalisation(pred_joints2D_coco_mode_normed, input.shape[-1])
 
         pred_reposed_vertices_mean = smpl_neutral(betas=pred_shape_mode).vertices  # (1, 6890, 3)
 
@@ -194,7 +197,7 @@ def evaluate_single_in_multitasknet_ssp3d(model,
         # Numpy-fying preds
         pred_vertices_mode = pred_vertices_mode.cpu().detach().numpy()
         pred_joints_coco_mode = pred_joints_coco_mode.cpu().detach().numpy()
-        pred_vertices2D_mode = pred_vertices2D_mode.cpu().detach().numpy()
+        pred_vertices2D_mode_for_vis = pred_vertices2D_mode_for_vis.cpu().detach().numpy()
         pred_joints2D_coco_mode = pred_joints2D_coco_mode.cpu().detach().numpy()
         pred_reposed_vertices_mean = pred_reposed_vertices_mean.cpu().detach().numpy()
 
@@ -332,11 +335,11 @@ def evaluate_single_in_multitasknet_ssp3d(model,
             per_frame_metrics['joints2D_l2es'].append(np.mean(joints2D_l2e_batch, axis=-1))  # (1,)
 
         if 'silhouette_ious' in metrics_to_track:
-            _, pred_silhouette_mode = renderer(vertices=pred_vertices_mode[0],
-                                               camera_translation=out['pred_cam_t'][0, 0, :].cpu().detach().numpy(),
-                                               image=np.zeros((model_cfg.MODEL.IMAGE_SIZE, model_cfg.MODEL.IMAGE_SIZE, 3)),
-                                               unnormalise_img=False,
-                                               return_silhouette=True)
+            _, pred_silhouette_mode = renderer_for_silh_eval(vertices=pred_vertices_mode[0],
+                                                             camera_translation=out['pred_cam_t'][0, 0, :].cpu().detach().numpy(),
+                                                             image=np.zeros((model_cfg.MODEL.IMAGE_SIZE, model_cfg.MODEL.IMAGE_SIZE, 3)),
+                                                             unnormalise_img=False,
+                                                             return_silhouette=True)
             pred_silhouette_mode = pred_silhouette_mode[None, :, :, 0].astype(np.float32)  # (1, img_wh, img_wh)
 
             true_positive = np.logical_and(pred_silhouette_mode, target_silhouette)
@@ -353,7 +356,6 @@ def evaluate_single_in_multitasknet_ssp3d(model,
             metric_sums['num_false_negatives'] += np.sum(num_fn)
             iou_per_frame = num_tp / (num_tp + num_fp + num_fn)
             per_frame_metrics['silhouette_ious'].append(iou_per_frame)  # (1,)
-            # TODO check silhouette eval and add silhouette visualisation
 
         # -------------------------------- 2D Metrics after Averaging over Samples ---------------------------
         if 'joints2Dsamples_l2es' in metrics_to_track:
@@ -368,11 +370,11 @@ def evaluate_single_in_multitasknet_ssp3d(model,
         if 'silhouettesamples_ious' in metrics_to_track:
             pred_silhouette_samples = []
             for i in range(num_pred_samples):
-                _, silh_sample = renderer(vertices=pred_vertices_samples[i],
-                                          camera_translation=out['pred_cam_t'][0, 0, :].cpu().detach().numpy(),
-                                          image=np.zeros((model_cfg.MODEL.IMAGE_SIZE, model_cfg.MODEL.IMAGE_SIZE, 3)),
-                                          unnormalise_img=False,
-                                          return_silhouette=True)
+                _, silh_sample = renderer_for_silh_eval(vertices=pred_vertices_samples[i],
+                                                        camera_translation=out['pred_cam_t'][0, 0, :].cpu().detach().numpy(),
+                                                        image=np.zeros((model_cfg.MODEL.IMAGE_SIZE, model_cfg.MODEL.IMAGE_SIZE, 3)),
+                                                        unnormalise_img=False,
+                                                        return_silhouette=True)
                 pred_silhouette_samples.append(silh_sample[:, :, 0].astype(np.float32))
             pred_silhouette_samples = np.stack(pred_silhouette_samples, axis=0)[None, :, :, :]  # (1, num_samples, img_wh, img_wh)
             target_silhouette_tiled = np.tile(target_silhouette[:, None, :, :], (1, num_pred_samples, 1, 1))  # (1, num_samples, img_wh, img_wh)
@@ -406,7 +408,10 @@ def evaluate_single_in_multitasknet_ssp3d(model,
             vis_img = samples_batch['vis_img'].numpy()
             vis_img = np.transpose(vis_img, [0, 2, 3, 1])
 
-            pred_cam_t = out['pred_cam_t'][0, 0, :].cpu().detach().numpy()
+            # pred_cam_t = out['pred_cam_t'][0, 0, :].cpu().detach().numpy()
+            pred_cam_t = torch.stack([pred_cam_wp[0, 1],
+                                      pred_cam_wp[0, 2],
+                                      2 * model_cfg.EXTRA.FOCAL_LENGTH / (vis_img_wh * pred_cam_wp[0, 0] + 1e-9)], dim=-1).cpu().detach().numpy()
 
             # Uncertainty Computation
             # Uncertainty computed by sampling + average distance from mean
@@ -417,43 +422,43 @@ def evaluate_single_in_multitasknet_ssp3d(model,
                 vertices_uncertainty_per_frame.append(avg_vertices_distance_from_mean)
 
             # Render predicted meshes
-            body_vis_rgb_mode = renderer(vertices=pred_vertices_mode[0],
-                                         camera_translation=pred_cam_t.copy(),  # copy() needed because renderer changes cam_t in place...
-                                         image=vis_img[0],
-                                         unnormalise_img=False)
-            body_vis_rgb_mode_rot = renderer(vertices=pred_vertices_mode[0],
-                                             camera_translation=pred_cam_t.copy() if not extreme_crop else rot_cam_t.copy(),
-                                             image=np.zeros_like(vis_img[0]),
-                                             unnormalise_img=False,
-                                             angle=np.pi/2.,
-                                             axis=[0., 1., 0.])
-
-            reposed_body_vis_rgb_mean = renderer(vertices=pred_reposed_vertices_mean[0],
-                                                 camera_translation=reposed_cam_t.copy(),
-                                                 image=np.zeros_like(vis_img[0]),
-                                                 unnormalise_img=False,
-                                                 flip_updown=False)
-            reposed_body_vis_rgb_mean_rot = renderer(vertices=pred_reposed_vertices_mean[0],
-                                                     camera_translation=reposed_cam_t.copy(),
+            body_vis_rgb_mode = renderer_for_vis(vertices=pred_vertices_mode[0],
+                                                 camera_translation=pred_cam_t.copy(),  # copy() needed because renderer changes cam_t in place...
+                                                 image=vis_img[0],
+                                                 unnormalise_img=False)
+            body_vis_rgb_mode_rot = renderer_for_vis(vertices=pred_vertices_mode[0],
+                                                     camera_translation=pred_cam_t.copy() if not extreme_crop else rot_cam_t.copy(),
                                                      image=np.zeros_like(vis_img[0]),
                                                      unnormalise_img=False,
-                                                     angle=np.pi / 2.,
-                                                     axis=[0., 1., 0.],
-                                                     flip_updown=False)
+                                                     angle=np.pi/2.,
+                                                     axis=[0., 1., 0.])
+
+            reposed_body_vis_rgb_mean = renderer_for_vis(vertices=pred_reposed_vertices_mean[0],
+                                                         camera_translation=reposed_cam_t.copy(),
+                                                         image=np.zeros_like(vis_img[0]),
+                                                         unnormalise_img=False,
+                                                         flip_updown=False)
+            reposed_body_vis_rgb_mean_rot = renderer_for_vis(vertices=pred_reposed_vertices_mean[0],
+                                                             camera_translation=reposed_cam_t.copy(),
+                                                             image=np.zeros_like(vis_img[0]),
+                                                             unnormalise_img=False,
+                                                             angle=np.pi / 2.,
+                                                             axis=[0., 1., 0.],
+                                                             flip_updown=False)
 
             body_vis_rgb_samples = []
             body_vis_rgb_rot_samples = []
             for i in range(num_samples_to_visualise):
-                body_vis_rgb_samples.append(renderer(vertices=pred_vertices_samples[i],
-                                                     camera_translation=pred_cam_t.copy(),
-                                                     image=vis_img[0],
-                                                     unnormalise_img=False))
-                body_vis_rgb_rot_samples.append(renderer(vertices=pred_vertices_samples[i],
-                                                         camera_translation=pred_cam_t.copy() if not extreme_crop else rot_cam_t.copy(),
-                                                         image=np.zeros_like(vis_img[0]),
-                                                         unnormalise_img=False,
-                                                         angle=np.pi / 2.,
-                                                         axis=[0., 1., 0.]))
+                body_vis_rgb_samples.append(renderer_for_vis(vertices=pred_vertices_samples[i],
+                                                             camera_translation=pred_cam_t.copy(),
+                                                             image=vis_img[0],
+                                                             unnormalise_img=False))
+                body_vis_rgb_rot_samples.append(renderer_for_vis(vertices=pred_vertices_samples[i],
+                                                                 camera_translation=pred_cam_t.copy() if not extreme_crop else rot_cam_t.copy(),
+                                                                 image=np.zeros_like(vis_img[0]),
+                                                                 unnormalise_img=False,
+                                                                 angle=np.pi / 2.,
+                                                                 axis=[0., 1., 0.]))
 
             # Save samples
             samples_save_path = os.path.join(save_path, os.path.splitext(fname[0])[0] + '_samples.npy')
@@ -475,8 +480,8 @@ def evaluate_single_in_multitasknet_ssp3d(model,
             plt.subplot(num_row, num_col, subplot_count)
             plt.gca().axis('off')
             plt.imshow(vis_img[0])
-            plt.scatter(pred_vertices2D_mode[0, :, 0],
-                        pred_vertices2D_mode[0, :, 1],
+            plt.scatter(pred_vertices2D_mode_for_vis[0, :, 0],
+                        pred_vertices2D_mode_for_vis[0, :, 1],
                         c='r', s=0.01)
             subplot_count += 1
 
@@ -922,6 +927,7 @@ if __name__ == '__main__':
                                           num_workers=args.num_workers,
                                           pin_memory=True,
                                           vis_every_n_batches=args.vis_every,
+                                          vis_img_wh=512,
                                           occlude=args.occlude,
                                           extreme_crop=args.extreme_crop,
                                           num_samples_to_visualise=10,
