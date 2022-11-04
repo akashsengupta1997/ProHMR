@@ -94,6 +94,9 @@ class SSP3DEvalDataset(Dataset):
                                        bbox_whs=[bbox_wh],
                                        orig_scale_factor=self.bbox_scale_factor)['rgb'][0] / 255.0
 
+        vis_img = cv2.resize(np.transpose(img, [1, 2, 0]),
+                             (self.vis_img_wh, self.vis_img_wh), interpolation=cv2.INTER_LINEAR)
+
         # ------------------- Targets -------------------
         shape = self.body_shapes[index]
         pose = self.body_poses[index]
@@ -122,7 +125,7 @@ class SSP3DEvalDataset(Dataset):
         input = self.normalize_img(img)
 
         return {'input': input,
-                'vis_img': img,
+                'vis_img': vis_img,
                 'shape': shape,
                 'pose': pose,
                 'silhouette': silhouette,
