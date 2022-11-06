@@ -747,6 +747,7 @@ def evaluate_3dpw(model,
             # x-direction
             plt.subplot(num_row, num_col, subplot_count)
             plt.gca().axis('off')
+            plt.gca().invert_yaxis()
             norm = plt.Normalize(vmin=0.0, vmax=0.1, clip=True)
             plt.scatter(pred_vertices_mode[0, :, 0],
                         pred_vertices_mode[0, :, 1],
@@ -760,6 +761,7 @@ def evaluate_3dpw(model,
 
             plt.subplot(num_row, num_col, subplot_count)
             plt.gca().axis('off')
+            plt.gca().invert_yaxis()
             norm = plt.Normalize(vmin=0.0, vmax=0.1, clip=True)
             plt.scatter(pred_vertices_mode[0, :, 2],  # Equivalent to Rotated 90° about y axis
                         pred_vertices_mode[0, :, 1],
@@ -773,6 +775,7 @@ def evaluate_3dpw(model,
             # y-direction
             plt.subplot(num_row, num_col, subplot_count)
             plt.gca().axis('off')
+            plt.gca().invert_yaxis()
             norm = plt.Normalize(vmin=0.0, vmax=0.1, clip=True)
             plt.scatter(pred_vertices_mode[0, :, 0],
                         pred_vertices_mode[0, :, 1],
@@ -786,6 +789,7 @@ def evaluate_3dpw(model,
 
             plt.subplot(num_row, num_col, subplot_count)
             plt.gca().axis('off')
+            plt.gca().invert_yaxis()
             norm = plt.Normalize(vmin=0.0, vmax=0.1, clip=True)
             plt.scatter(pred_vertices_mode[0, :, 2],  # Equivalent to Rotated 90° about y axis
                         pred_vertices_mode[0, :, 1],
@@ -799,6 +803,7 @@ def evaluate_3dpw(model,
             # z-direction
             plt.subplot(num_row, num_col, subplot_count)
             plt.gca().axis('off')
+            plt.gca().invert_yaxis()
             norm = plt.Normalize(vmin=0.0, vmax=0.1, clip=True)
             plt.scatter(pred_vertices_mode[0, :, 0],
                         pred_vertices_mode[0, :, 1],
@@ -812,6 +817,7 @@ def evaluate_3dpw(model,
 
             plt.subplot(num_row, num_col, subplot_count)
             plt.gca().axis('off')
+            plt.gca().invert_yaxis()
             norm = plt.Normalize(vmin=0.0, vmax=0.1, clip=True)
             plt.scatter(pred_vertices_mode[0, :, 2],  # Equivalent to Rotated 90° about y axis
                         pred_vertices_mode[0, :, 1],
