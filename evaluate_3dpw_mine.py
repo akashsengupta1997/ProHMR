@@ -79,6 +79,7 @@ def evaluate_3dpw(model,
     cam_per_frame = []
     if save_per_frame_uncertainty:
         vertices_uncertainty_per_frame = []
+        vertices_uncertainty_xyz_per_frame = []
 
     renderer = Renderer(model_cfg, faces=model.smpl.faces, img_res=vis_img_wh)
     reposed_cam_t = convert_weak_perspective_to_camera_translation(cam_wp=np.array([0.85, 0., -0.2]),
@@ -453,11 +454,12 @@ def evaluate_3dpw(model,
 
             # Uncertainty Computation
             # Uncertainty computed by sampling + average distance from mean
-            avg_vertices_distance_from_mean, avg_vertices_sc_distance_from_mean = compute_vertex_uncertainties_from_samples(
+            avg_vertices_distance_from_mean, _, avg_vertices_distance_from_mean_xyz = compute_vertex_uncertainties_from_samples(
                 vertices_samples=pred_vertices_samples,
-                target_vertices=target_vertices)
+                return_separate_reposed_dims=True)
             if save_per_frame_uncertainty:
                 vertices_uncertainty_per_frame.append(avg_vertices_distance_from_mean)
+                vertices_uncertainty_xyz_per_frame.append(avg_vertices_distance_from_mean_xyz)
 
             # Render predicted meshes
             body_vis_rgb_mode = renderer(vertices=pred_vertices_mode[0],
@@ -503,7 +505,7 @@ def evaluate_3dpw(model,
             np.save(samples_save_path, pred_vertices_samples)
 
             # ------------------ Model Prediction, Error and Uncertainty Figure ------------------
-            num_row = 5
+            num_row = 6
             num_col = 6
             subplot_count = 1
             plt.figure(figsize=(20, 20))
@@ -714,8 +716,8 @@ def evaluate_3dpw(model,
             plt.gca().axis('off')
             plt.gca().invert_yaxis()
             norm = plt.Normalize(vmin=0.0, vmax=0.2, clip=True)
-            plt.scatter(pred_vertices_sc[0, :, 0],
-                        pred_vertices_sc[0, :, 1],
+            plt.scatter(pred_vertices_mode[0, :, 0],
+                        pred_vertices_mode[0, :, 1],
                         s=0.05,
                         c=avg_vertices_distance_from_mean,
                         cmap='jet',
@@ -727,42 +729,94 @@ def evaluate_3dpw(model,
             plt.gca().axis('off')
             plt.gca().invert_yaxis()
             norm = plt.Normalize(vmin=0.0, vmax=0.2, clip=True)
-            plt.scatter(pred_vertices_sc[0, :, 2],
-                        pred_vertices_sc[0, :, 1],
+            plt.scatter(pred_vertices_mode[0, :, 2],
+                        pred_vertices_mode[0, :, 1],
                         s=0.05,
-                        c=avg_vertices_sc_distance_from_mean,
+                        c=avg_vertices_distance_from_mean,
                         cmap='jet',
                         norm=norm)
             plt.gca().set_aspect('equal', adjustable='box')
             subplot_count += 1
 
+            # Plot vertex uncertainties in x/y/z directions
             plt.subplot(num_row, num_col, subplot_count)
             plt.gca().axis('off')
-            plt.text(0.5, 0.5, s='Uncertainty for\nPVE-SC')
+            plt.text(0.1, 0.1, s='Uncertainty\nfor PVE x/y/z')
+            subplot_count += 1
+
+            # x-direction
+            plt.subplot(num_row, num_col, subplot_count)
+            plt.gca().axis('off')
+            norm = plt.Normalize(vmin=0.0, vmax=0.1, clip=True)
+            plt.scatter(pred_vertices_mode[0, :, 0],
+                        pred_vertices_mode[0, :, 1],
+                        s=0.05,
+                        c=avg_vertices_distance_from_mean_xyz[:, 0],
+                        cmap='jet',
+                        norm=norm)
+            plt.gca().set_aspect('equal', adjustable='box')
+            plt.colorbar(shrink=0.5, label='Uncertainty x (m)', orientation='vertical', format='%.2f')
             subplot_count += 1
 
             plt.subplot(num_row, num_col, subplot_count)
             plt.gca().axis('off')
-            plt.gca().invert_yaxis()
-            norm = plt.Normalize(vmin=0.0, vmax=0.2, clip=True)
-            plt.scatter(pred_vertices_pa[0, :, 0],
-                        pred_vertices_pa[0, :, 1],
+            norm = plt.Normalize(vmin=0.0, vmax=0.1, clip=True)
+            plt.scatter(pred_vertices_mode[0, :, 2],  # Equivalent to Rotated 90° about y axis
+                        pred_vertices_mode[0, :, 1],
                         s=0.05,
-                        c=avg_vertices_sc_distance_from_mean,
+                        c=avg_vertices_distance_from_mean_xyz[:, 0],
                         cmap='jet',
                         norm=norm)
             plt.gca().set_aspect('equal', adjustable='box')
             subplot_count += 1
 
+            # y-direction
             plt.subplot(num_row, num_col, subplot_count)
             plt.gca().axis('off')
-            plt.gca().invert_yaxis()
-            norm = plt.Normalize(vmin=0.0, vmax=0.2, clip=True)
-            plt.scatter(pred_vertices_pa[0, :, 2],
-                        # Equivalent to Rotated 90° about y axis
-                        pred_vertices_pa[0, :, 1],
+            norm = plt.Normalize(vmin=0.0, vmax=0.1, clip=True)
+            plt.scatter(pred_vertices_mode[0, :, 0],
+                        pred_vertices_mode[0, :, 1],
                         s=0.05,
-                        c=avg_vertices_sc_distance_from_mean,
+                        c=avg_vertices_distance_from_mean_xyz[:, 1],
+                        cmap='jet',
+                        norm=norm)
+            plt.gca().set_aspect('equal', adjustable='box')
+            plt.colorbar(shrink=0.5, label='Uncertainty y (m)', orientation='vertical', format='%.2f')
+            subplot_count += 1
+
+            plt.subplot(num_row, num_col, subplot_count)
+            plt.gca().axis('off')
+            norm = plt.Normalize(vmin=0.0, vmax=0.1, clip=True)
+            plt.scatter(pred_vertices_mode[0, :, 2],  # Equivalent to Rotated 90° about y axis
+                        pred_vertices_mode[0, :, 1],
+                        s=0.05,
+                        c=avg_vertices_distance_from_mean_xyz[:, 1],
+                        cmap='jet',
+                        norm=norm)
+            plt.gca().set_aspect('equal', adjustable='box')
+            subplot_count += 1
+
+            # z-direction
+            plt.subplot(num_row, num_col, subplot_count)
+            plt.gca().axis('off')
+            norm = plt.Normalize(vmin=0.0, vmax=0.1, clip=True)
+            plt.scatter(pred_vertices_mode[0, :, 0],
+                        pred_vertices_mode[0, :, 1],
+                        s=0.05,
+                        c=avg_vertices_distance_from_mean_xyz[:, 2],
+                        cmap='jet',
+                        norm=norm)
+            plt.gca().set_aspect('equal', adjustable='box')
+            plt.colorbar(shrink=0.5, label='Uncertainty z (m)', orientation='vertical', format='%.2f')
+            subplot_count += 1
+
+            plt.subplot(num_row, num_col, subplot_count)
+            plt.gca().axis('off')
+            norm = plt.Normalize(vmin=0.0, vmax=0.1, clip=True)
+            plt.scatter(pred_vertices_mode[0, :, 2],  # Equivalent to Rotated 90° about y axis
+                        pred_vertices_mode[0, :, 1],
+                        s=0.05,
+                        c=avg_vertices_distance_from_mean_xyz[:, 2],
                         cmap='jet',
                         norm=norm)
             plt.gca().set_aspect('equal', adjustable='box')
@@ -838,6 +892,10 @@ def evaluate_3dpw(model,
         vertices_uncertainty_per_frame = np.stack(vertices_uncertainty_per_frame, axis=0)
         np.save(os.path.join(save_path, 'vertices_uncertainty_per_frame.npy'), vertices_uncertainty_per_frame)
         print(vertices_uncertainty_per_frame.shape)
+
+        vertices_uncertainty_xyz_per_frame = np.stack(vertices_uncertainty_xyz_per_frame, axis=0)
+        np.save(os.path.join(save_path, 'vertices_uncertainty_xyz_per_frame.npy'), vertices_uncertainty_xyz_per_frame)
+        print(vertices_uncertainty_xyz_per_frame.shape)
 
     final_metrics = {}
     for metric_type in metrics_to_track:
