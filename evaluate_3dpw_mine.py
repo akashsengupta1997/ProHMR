@@ -973,7 +973,7 @@ if __name__ == '__main__':
     parser.add_argument('--model_cfg', type=str, default=None, help='Path to config file. If not set use the default (prohmr/configs/prohmr.yaml)')
     parser.add_argument('--gpu', default='0', type=str, help='GPU')
     parser.add_argument('--num_samples', '-N', type=int, default=25, help='Number of test samples to evaluate with')
-    parser.add_argument('--use_subset', '-S',action='store_true')
+    parser.add_argument('--use_subset', '-S', action='store_true')
     parser.add_argument('--extreme_crop', '-C', action='store_true')
     parser.add_argument('--extreme_crop_scale', '-CS', type=float, default=0.5)
 
