@@ -421,7 +421,6 @@ def evaluate_single_in_multitasknet_ssp3d(model,
             if save_per_frame_uncertainty:
                 vertices_uncertainty_per_frame.append(avg_vertices_distance_from_mean)
                 vertices_uncertainty_xyz_per_frame.append(avg_vertices_distance_from_mean_xyz)
-                continue
 
             # Render predicted meshes
             body_vis_rgb_mode = renderer_for_vis(vertices=pred_vertices_mode[0],
